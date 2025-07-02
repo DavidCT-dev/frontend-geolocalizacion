@@ -28,13 +28,6 @@ jobs:
       - name: Force install dependencies
         run: npm install --force
 
-      - name: Setup public environment variables for build
-        run: |
-          echo "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}" >> .env
-          echo "NEXT_PUBLIC_API_URL_BACK=${{ secrets.NEXT_PUBLIC_API_URL_BACK }}" >> .env
-          echo "NEXT_PUBLIC_WEB_SOCKET_URL_CLOUD=${{ secrets.NEXT_PUBLIC_WEB_SOCKET_URL_CLOUD }}" >> .env
-          cat .env
-
       - name: Build project
         run: npm run build
 

@@ -37,7 +37,7 @@ export default function Page(): React.JSX.Element {
   const [drivers, setDrivers] = useState([]);
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [selectedDriverForPdf, setSelectedDriverForPdf] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState<Date | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<any>(null);
 
   const getDrivers = async () => {
     try {

@@ -31,7 +31,7 @@ export default function Page(): React.JSX.Element {
   const [openReportModal, setOpenReportModal] = useState(false);
   const [selectedDriver, setSelectedDriver] = useState('');
   const [selectedDriverForReport, setSelectedDriverForReport] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState<Dayjs | null>(dayjs().startOf('month'));
+  const [selectedMonth, setSelectedMonth] = useState<any>(dayjs().startOf('month'));
   const [vehicleName, setVehicleName] = useState('');
   const [licensePlate, setLicensePlate] = useState('');
   const [loading, setLoading] = useState(false);
@@ -388,7 +388,6 @@ export default function Page(): React.JSX.Element {
                 value={selectedMonth}
                 onChange={(newValue) => {
                   if (newValue) {
-                    // Mantener el año actual pero cambiar solo el mes
                     const adjustedMonth = selectedMonth
                       ? selectedMonth.month(newValue.month())
                       : dayjs().month(newValue.month()).startOf('month');
