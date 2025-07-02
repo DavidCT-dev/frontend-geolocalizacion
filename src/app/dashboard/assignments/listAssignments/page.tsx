@@ -123,7 +123,7 @@ export default function Page(): React.JSX.Element {
     doc.text(`Email: ${driverData.email}`, 14, 54);
     doc.text(`Vehículo: ${driverData.vehiculo || 'Sin dato'}`, 14, 62);
     doc.text(`Matrícula: ${driverData.matricula || 'Sin dato'}`, 14, 70);
-    
+
     // Añadir mes seleccionado al PDF
     if (selectedMonth) {
       const monthName = selectedMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
@@ -139,8 +139,7 @@ export default function Page(): React.JSX.Element {
         ['Teléfono', driverData.telefono],
         ['Email', driverData.email],
         ['Vehículo', driverData.vehiculo || 'Sin dato'],
-        ['Matrícula', driverData.matricula || 'Sin dato'],
-        ...(selectedMonth ? [['Mes del reporte', monthName]] : [])
+        ['Matrícula', driverData.matricula || 'Sin dato']
       ],
       styles: {
         halign: 'left',
@@ -166,7 +165,7 @@ export default function Page(): React.JSX.Element {
 
   const handleGeneratePdfWithParams = () => {
     if (!selectedDriverForPdf || !selectedMonth) return;
-    
+
     const driverData = drivers.find((driver: any) => driver._id === selectedDriverForPdf);
     if (driverData) {
       generatePDF(driverData);
@@ -312,12 +311,12 @@ export default function Page(): React.JSX.Element {
                 onChange={(newValue) => setSelectedMonth(newValue)}
                 views={['year', 'month']}
                 openTo="month"
-                slotProps={{ 
-                  textField: { 
-                    size: 'small', 
+                slotProps={{
+                  textField: {
+                    size: 'small',
                     variant: 'outlined',
                     fullWidth: true
-                  } 
+                  }
                 }}
                 disabled={loading}
               />
