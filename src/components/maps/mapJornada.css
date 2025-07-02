@@ -1,0 +1,12 @@
+/* Mejora la visualización de las etiquetas */
+.map-stop-label {
+  background-color: rgba(52, 168, 83, 0.7);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* Ajusta el z-index para que las etiquetas sean visibles */
+.gm-style .gm-style-iw-c {
+  z-index: 4 !important;
+}

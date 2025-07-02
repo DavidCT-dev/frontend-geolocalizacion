@@ -1,0 +1,21 @@
+.form_container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+.update_form_container {
+    width: 50rem;
+}
+.form_container > div {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+.form_container > div > div {
+    width: 70%;
+}
+
+.update_form_container > form > div {
+    box-shadow: none !important;
+}
