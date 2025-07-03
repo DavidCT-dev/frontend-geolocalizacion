@@ -24,7 +24,7 @@ export async function middleware(request: NextRequest) {
 
   // 2. Rutas públicas accesibles sin autenticación
   const publicPaths = [
-    'auth/send-password',
+    '/auth/send-password?token',
     '/auth/sign-in',
     '/auth/sign-up',
     '/unauthorized',
