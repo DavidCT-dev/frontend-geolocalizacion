@@ -23,4 +23,4 @@ COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 
 USER nextjs
 EXPOSE 3000
-CMD ["npx", "next", "start"]
+CMD ["npm", "run", "start"]
