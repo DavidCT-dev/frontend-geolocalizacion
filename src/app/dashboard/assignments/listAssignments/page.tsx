@@ -57,6 +57,7 @@ interface Asignacion {
     nombre: string;
   };
   rutaId?: {
+    _id?:string
     nombre: string;
   };
   fecha: string;
@@ -314,7 +315,7 @@ export default function Page(): JSX.Element {
     }
   };
 
- const generateReport = async (month: Dayjs, rutaId: string | null) => {
+  const generateReport = async (month: Dayjs, rutaId: string | null) => {
   try {
     setLoading(true);
 
@@ -338,9 +339,9 @@ export default function Page(): JSX.Element {
     // Crear PDF en modo vertical (portrait)
     const doc = new jsPDF('p', 'mm', 'a4');
 
-    // Título simple
+    // Título principal
     doc.setFontSize(16);
-    doc.setTextColor(0, 0, 0); // Negro simple
+    doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'bold');
     doc.text('REPORTE MENSUAL DE ASIGNACIONES', 105, 20, { align: 'center' });
 
@@ -356,9 +357,9 @@ export default function Page(): JSX.Element {
 
     // Procesar datos para la tabla
     const daysInMonth = month.daysInMonth();
-    const assignmentsByDay: Record<string, string[]> = {};
+    const assignmentsByDay: Record<number, string[]> = {};
 
-    Array.from({length: daysInMonth}, (_, i) => i + 1).forEach(day => {
+    Array.from({ length: daysInMonth }, (_, i) => i + 1).forEach(day => {
       assignmentsByDay[day] = [];
     });
 
@@ -369,58 +370,116 @@ export default function Page(): JSX.Element {
       }
     });
 
-    // Preparar datos para tabla compacta
-    const tableData = [];
+    // Preparar datos para tabla
+    const tableData: string[][] = [];
     for (let day = 1; day <= daysInMonth; day++) {
       const date = month.date(day);
       const dayName = date.format('ddd').toUpperCase();
       const dateStr = date.format('DD/MM');
 
       tableData.push([
-        { content: day.toString(), styles: { fontStyle: 'bold', halign: 'center' } },
+        day.toString(),
         `${dayName} ${dateStr}`,
         assignmentsByDay[day].join('\n') || '--'
       ]);
     }
 
-    // Generar tabla compacta
+    // Generar tabla
     autoTable(doc, {
       startY: 40,
       head: [
         [
-          { content: 'DÍA', styles: { fillColor: [100, 100, 100], textColor: 255 } },
-          { content: 'FECHA', styles: { fillColor: [100, 100, 100], textColor: 255 } },
-          { content: 'CONDUCTORES', styles: { fillColor: [100, 100, 100], textColor: 255 } }
+          {
+            content: 'DÍA',
+            styles: {
+              fillColor: [100, 100, 100],
+              textColor: 255,
+              fontStyle: 'bold' as const,
+              halign: 'center' as const
+            }
+          },
+          {
+            content: 'FECHA',
+            styles: {
+              fillColor: [100, 100, 100],
+              textColor: 255,
+              fontStyle: 'bold' as const,
+              halign: 'center' as const
+            }
+          },
+          {
+            content: 'CONDUCTORES',
+            styles: {
+              fillColor: [100, 100, 100],
+              textColor: 255,
+              fontStyle: 'bold' as const,
+              halign: 'center' as const
+            }
+          }
         ]
       ],
-      body: tableData,
+      body: tableData.map(row => [
+        {
+          content: row[0],
+          styles: {
+            fontStyle: 'normal' as const,
+            halign: 'center' as const
+          }
+        },
+        {
+          content: row[1],
+          styles: {
+            fontStyle: 'normal' as const,
+            halign: 'left' as const
+          }
+        },
+        {
+          content: row[2],
+          styles: {
+            fontStyle: 'normal' as const,
+            halign: 'left' as const
+          }
+        }
+      ]),
       columnStyles: {
-        0: { cellWidth: 15, halign: 'center' },
-        1: { cellWidth: 25 },
-        2: { cellWidth: 'auto', cellPadding: 2 }
+        0: {
+          cellWidth: 15,
+          halign: 'center' as const,
+          fontStyle: 'bold' as const
+        },
+        1: {
+          cellWidth: 25,
+          halign: 'left' as const
+        },
+        2: {
+          cellWidth: 'auto',
+          cellPadding: 2,
+          halign: 'left' as const
+        }
       },
       styles: {
         fontSize: 8,
         cellPadding: 1,
         lineColor: [200, 200, 200],
         lineWidth: 0.1,
-        overflow: 'linebreak'
+        overflow: 'linebreak' as const,
+        fontStyle: 'normal' as const,
+        halign: 'left' as const
       },
       margin: { left: 20, right: 20 },
-      tableWidth: 'wrap',
-      pageBreak: 'avoid'
+      tableWidth: 'wrap' as const,
+      pageBreak: 'avoid' as const
     });
 
-    // Pie de página simple
+    // Pie de página
     doc.setFontSize(8);
     doc.setTextColor(100);
     doc.text(`Generado el: ${dayjs().format('DD/MM/YYYY HH:mm')}`, 20, 285);
     doc.text('Sistema de Gestión de Transporte', 190, 285, { align: 'right' });
 
-    // Mostrar en nueva pestaña
+    // Mostrar PDF en nueva pestaña
     const pdfOutput = doc.output('bloburl');
     window.open(pdfOutput, '_blank');
-
   } catch (error) {
     console.error('Error al generar reporte:', error);
     setSnackbar({
@@ -432,6 +491,7 @@ export default function Page(): JSX.Element {
     setLoading(false);
   }
 };
+
 
 
   return (
@@ -823,7 +883,7 @@ export default function Page(): JSX.Element {
                   options={drivers}
                   getOptionLabel={(option: Driver) => option.nombre}
                   value={drivers.find((d: any) => d._id === asignacionEdit.conductorId?._id) || null}
-                 disabled={true}
+                  disabled={true}
                   renderInput={(params) => (
                     <TextField
                       {...params}
