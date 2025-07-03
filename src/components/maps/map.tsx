@@ -36,9 +36,9 @@ const COLORES = {
 
 interface MapProps {
   onMapClick?: (e: google.maps.MapMouseEvent) => void;
-  routePoints?: Array<{ latitud: number; longitud: number }>;
-  alternativeRoute?: Array<{ latitud: number; longitud: number }>;
-  stopPoints?: Array<{ nombre: string; latitud: number; longitud: number }>;
+  routePoints?: { latitud: number; longitud: number }[];
+  alternativeRoute?: { latitud: number; longitud: number }[];
+  stopPoints?: { nombre: string; latitud: number; longitud: number }[];
   mode?: 'ruta' | 'parada' | 'alternativa' | 'view';
   currentDirection?: 'ida' | 'vuelta';
 }
@@ -83,8 +83,8 @@ const Map = forwardRef<MapRef, MapProps>((
   };
 
   const clearOverlays = useCallback(() => {
-    polylinesRef.current.forEach(polyline => polyline?.setMap(null));
-    markersRef.current.forEach(marker => marker?.setMap(null));
+    polylinesRef.current.forEach(polyline => { polyline?.setMap(null); });
+    markersRef.current.forEach(marker => { marker?.setMap(null); });
     polylinesRef.current = [];
     markersRef.current = [];
   }, []);
@@ -251,8 +251,7 @@ const Map = forwardRef<MapRef, MapProps>((
       ))}
 
       {/* Último punto */}
-      {lastPoint && (
-        <Marker
+      {lastPoint ? <Marker
           key={`marker-last-${renderKey}`}
           position={lastPoint}
           icon={{
@@ -264,8 +263,7 @@ const Map = forwardRef<MapRef, MapProps>((
             scale: 8
           }}
           onLoad={(marker) => markersRef.current.push(marker)}
-        />
-      )}
+        /> : null}
     </GoogleMap>
   );
 });

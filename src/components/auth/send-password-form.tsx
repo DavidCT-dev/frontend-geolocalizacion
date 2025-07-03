@@ -47,8 +47,8 @@ export function SendPasswordForm(): React.JSX.Element {
 
   const { checkSession } = useUser();
 
-  const handleClickShowPassword = () => setShowPassword((show) => !show);
-  const handleClickShowConfirmPassword = () => setShowConfirmPassword((show) => !show);
+  const handleClickShowPassword = () => { setShowPassword((show) => !show); };
+  const handleClickShowConfirmPassword = () => { setShowConfirmPassword((show) => !show); };
 
 
   const onSubmit = React.useCallback(

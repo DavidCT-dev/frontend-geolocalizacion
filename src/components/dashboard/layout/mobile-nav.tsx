@@ -165,13 +165,11 @@ function NavItem({ disabled, external, href, icon, matcher, pathname, title, chi
         }}
       >
         <Box sx={{ alignItems: 'center', display: 'flex', justifyContent: 'center', flex: '0 0 auto' }}>
-          {Icon && (
-            <Icon
+          {Icon ? <Icon
               fill={active ? 'var(--NavItem-icon-active-color)' : 'var(--NavItem-icon-color)'}
               fontSize="var(--icon-fontSize-md)"
               weight={active ? 'fill' : undefined}
-            />
-          )}
+            /> : null}
         </Box>
         <Box sx={{ flex: '1 1 auto' }}>
           <Typography
@@ -181,19 +179,16 @@ function NavItem({ disabled, external, href, icon, matcher, pathname, title, chi
             {title}
           </Typography>
         </Box>
-        {hasChildren && (
-          <CaretUpDownIcon
+        {hasChildren ? <CaretUpDownIcon
             fontSize="var(--icon-fontSize-sm)"
             style={{
               transform: open ? 'rotate(180deg)' : 'none',
               transition: 'transform 0.2s ease-in-out'
             }}
-          />
-        )}
+          /> : null}
       </Box>
 
-      {hasChildren && open && (
-        <Stack
+      {hasChildren && open ? <Stack
           component="ul"
           spacing={1}
           sx={{
@@ -207,8 +202,7 @@ function NavItem({ disabled, external, href, icon, matcher, pathname, title, chi
           {children?.map((child: any) => (
             <NavItem key={child.key} pathname={pathname} {...child} />
           ))}
-        </Stack>
-      )}
+        </Stack> : null}
     </li>
   );
 }

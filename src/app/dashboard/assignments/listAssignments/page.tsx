@@ -16,8 +16,6 @@ import {
   Typography,
   Snackbar,
   Alert,
-  Menu,
-  MenuItem,
   TablePagination,
   InputAdornment,
   IconButton,
@@ -26,7 +24,7 @@ import {
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { useForm, Controller } from 'react-hook-form';
-import dayjs, { Dayjs } from 'dayjs';
+import dayjs, { type Dayjs } from 'dayjs';
 import 'dayjs/locale/es';
 import { jsPDF } from 'jspdf';
 import SearchIcon from '@mui/icons-material/Search';
@@ -37,6 +35,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import CloseIcon from '@mui/icons-material/Close';
 import autoTable from 'jspdf-autotable';
+
 dayjs.locale('es');
 
 interface Driver {
@@ -274,7 +273,7 @@ export default function Page(): JSX.Element {
   );
 
   const handleUpdateAsignacion = async () => {
-    if (!asignacionEdit || !asignacionEdit.conductorId) return;
+    if (!asignacionEdit?.conductorId) return;
 
     try {
       setEditLoading(true);
@@ -529,7 +528,7 @@ export default function Page(): JSX.Element {
                 options={drivers}
                 getOptionLabel={(option: Driver) => option.nombre || ''}
                 value={field.value}
-                onChange={(_, data) => field.onChange(data)}
+                onChange={(_, data) => { field.onChange(data); }}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -552,7 +551,7 @@ export default function Page(): JSX.Element {
           <Button
             variant="contained"
             color="secondary"
-            onClick={() => setOpenReportModal(true)}
+            onClick={() => { setOpenReportModal(true); }}
           >
             Generar Reporte
           </Button>
@@ -633,7 +632,7 @@ export default function Page(): JSX.Element {
             options={rutas}
             getOptionLabel={(option: Ruta) => option.nombre || ''}
             value={rutas.find(r => r._id === rutaFilter) || null}
-            onChange={(_, newValue) => setRutaFilter(newValue?._id || null)}
+            onChange={(_, newValue) => { setRutaFilter(newValue?._id || null); }}
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -692,7 +691,7 @@ export default function Page(): JSX.Element {
                         <Checkbox
                           color="primary"
                           checked={asignacionesToDelete.includes(item._id)}
-                          onChange={() => handleSelectForDeletion(item._id)}
+                          onChange={() => { handleSelectForDeletion(item._id); }}
                         />
                       </TableCell>
                       <TableCell>{item.conductorId?.nombre || '-'}</TableCell>
@@ -702,7 +701,7 @@ export default function Page(): JSX.Element {
                         <Button
                           variant="contained"
                           color="secondary"
-                          onClick={() => handleOpenEditModal(item)}
+                          onClick={() => { handleOpenEditModal(item); }}
                           disabled={dayjs(item.fecha).isBefore(dayjs(), 'day')}
                           startIcon={<EditIcon />}
                           sx={{
@@ -754,7 +753,7 @@ export default function Page(): JSX.Element {
         {/* Modal para generar reporte */}
         <Modal
           open={openReportModal}
-          onClose={() => setOpenReportModal(false)}
+          onClose={() => { setOpenReportModal(false); }}
           aria-labelledby="modal-generar-reporte"
         >
           <Box sx={{
@@ -772,7 +771,7 @@ export default function Page(): JSX.Element {
               <Typography variant="h6" component="h2">
                 Configurar Reporte
               </Typography>
-              <IconButton onClick={() => setOpenReportModal(false)}>
+              <IconButton onClick={() => { setOpenReportModal(false); }}>
                 <CloseIcon />
               </IconButton>
             </Box>
@@ -797,7 +796,7 @@ export default function Page(): JSX.Element {
                 options={rutas}
                 getOptionLabel={(option: Ruta) => option.nombre}
                 value={rutas.find(r => r._id === selectedRutaForReport) || null}
-                onChange={(_, newValue) => setSelectedRutaForReport(newValue?._id || null)}
+                onChange={(_, newValue) => { setSelectedRutaForReport(newValue?._id || null); }}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -811,7 +810,7 @@ export default function Page(): JSX.Element {
             <Box display="flex" justifyContent="flex-end" gap={2} mt={3}>
               <Button
                 variant="outlined"
-                onClick={() => setOpenReportModal(false)}
+                onClick={() => { setOpenReportModal(false); }}
               >
                 Cancelar
               </Button>
@@ -858,8 +857,7 @@ export default function Page(): JSX.Element {
               </IconButton>
             </Box>
 
-            {asignacionEdit && (
-              <>
+            {asignacionEdit ? <>
                 {/* Campo para seleccionar línea */}
                 <Box mb={2}>
                   <Autocomplete
@@ -883,7 +881,7 @@ export default function Page(): JSX.Element {
                   options={drivers}
                   getOptionLabel={(option: Driver) => option.nombre}
                   value={drivers.find((d: any) => d._id === asignacionEdit.conductorId?._id) || null}
-                  disabled={true}
+                  disabled
                   renderInput={(params) => (
                     <TextField
                       {...params}
@@ -915,8 +913,7 @@ export default function Page(): JSX.Element {
                     {editLoading ? 'Guardando...' : 'Guardar cambios'}
                   </Button>
                 </Box>
-              </>
-            )}
+              </> : null}
           </Box>
         </Modal>
 

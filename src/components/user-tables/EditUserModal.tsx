@@ -117,7 +117,7 @@ export default function EditUserModal({
                   {...field}
                   fullWidth
                   label="Nombre"
-                  error={!!errors.nombre}
+                  error={Boolean(errors.nombre)}
                   helperText={errors.nombre?.message}
                 />
               )}
@@ -131,7 +131,7 @@ export default function EditUserModal({
                   fullWidth
                   label="Email"
                   type="email"
-                  error={!!errors.email}
+                  error={Boolean(errors.email)}
                   helperText={errors.email?.message}
                   disabled
                 />
@@ -145,7 +145,7 @@ export default function EditUserModal({
                   {...field}
                   fullWidth
                   label="CI"
-                  error={!!errors.ci}
+                  error={Boolean(errors.ci)}
                   helperText={errors.ci?.message}
                 />
               )}
@@ -158,7 +158,7 @@ export default function EditUserModal({
                   {...field}
                   fullWidth
                   label="Teléfono"
-                  error={!!errors.telefono}
+                  error={Boolean(errors.telefono)}
                   helperText={errors.telefono?.message}
                 />
               )}
@@ -172,7 +172,7 @@ export default function EditUserModal({
                   select
                   fullWidth
                   label="Rol"
-                  error={!!errors.rol}
+                  error={Boolean(errors.rol)}
                   helperText={errors.rol?.message}
                 >
                   {roles.map((roleItem) => (

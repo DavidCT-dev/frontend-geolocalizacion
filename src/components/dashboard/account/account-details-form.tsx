@@ -18,7 +18,7 @@ import Select from '@mui/material/Select';
 import { profileSchema } from '../../../schemas';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import { type z } from 'zod';
 
 type FormData = z.infer<typeof profileSchema>;
 
@@ -75,65 +75,56 @@ export function AccountDetailsForm({ user }: any): React.JSX.Element {
         <CardContent>
           <Grid container spacing={3}>
             <Grid md={6} xs={12}>
-              <FormControl fullWidth error={!!errors.nombre}>
+              <FormControl fullWidth error={Boolean(errors.nombre)}>
                 <InputLabel>Nombre</InputLabel>
                 <OutlinedInput
                   {...register('nombre')}
                   label="Nombre"
                 />
-                {errors.nombre && (
-                  <Typography variant="caption" color="error">
+                {errors.nombre ? <Typography variant="caption" color="error">
                     {errors.nombre.message}
-                  </Typography>
-                )}
+                  </Typography> : null}
               </FormControl>
             </Grid>
             <Grid md={6} xs={12}>
-              <FormControl fullWidth error={!!errors.ci}>
+              <FormControl fullWidth error={Boolean(errors.ci)}>
                 <InputLabel>CI</InputLabel>
                 <OutlinedInput
                   {...register('ci')}
                   label="CI"
                 />
-                {errors.ci && (
-                  <Typography variant="caption" color="error">
+                {errors.ci ? <Typography variant="caption" color="error">
                     {errors.ci.message}
-                  </Typography>
-                )}
+                  </Typography> : null}
               </FormControl>
             </Grid>
             <Grid md={6} xs={12}>
-              <FormControl fullWidth error={!!errors.telefono}>
+              <FormControl fullWidth error={Boolean(errors.telefono)}>
                 <InputLabel>Teléfono</InputLabel>
                 <OutlinedInput
                   {...register('telefono')}
                   label="Teléfono"
                 />
-                {errors.telefono && (
-                  <Typography variant="caption" color="error">
+                {errors.telefono ? <Typography variant="caption" color="error">
                     {errors.telefono.message}
-                  </Typography>
-                )}
+                  </Typography> : null}
               </FormControl>
             </Grid>
             <Grid md={6} xs={12}>
-              <FormControl fullWidth error={!!errors.email}>
+              <FormControl fullWidth error={Boolean(errors.email)}>
                 <InputLabel>Correo</InputLabel>
                 <OutlinedInput
                   {...register('email')}
                   label="Correo"
                   type="email"
                 />
-                {errors.email && (
-                  <Typography variant="caption" color="error">
+                {errors.email ? <Typography variant="caption" color="error">
                     {errors.email.message}
-                  </Typography>
-                )}
+                  </Typography> : null}
               </FormControl>
             </Grid>
 
-            {isDriver && (
-              <Grid container spacing={3} sx={{ mt: 1 }}>
+            {isDriver ? <Grid container spacing={3} sx={{ mt: 1 }}>
                 <Grid xs={12}>
                   <Typography variant="h6" gutterBottom>
                     Información del Vehículo
@@ -142,40 +133,35 @@ export function AccountDetailsForm({ user }: any): React.JSX.Element {
                 </Grid>
 
                 <Grid xs={12} md={6}>
-                  <FormControl fullWidth error={!!errors.vehiculo}>
+                  <FormControl fullWidth error={Boolean(errors.vehiculo)}>
                     <InputLabel>Tipo de Vehículo</InputLabel>
                     <Select
                       value={watch('vehiculo')}
-                      onChange={(e) => setValue('vehiculo', e.target.value)}
+                      onChange={(e) => { setValue('vehiculo', e.target.value); }}
                       label="Tipo de Vehículo"
                     >
                       <MenuItem value="Minibús">Minibús</MenuItem>
                       <MenuItem value="Microbús">Microbús</MenuItem>
                     </Select>
-                    {errors.vehiculo && (
-                      <Typography variant="caption" color="error">
+                    {errors.vehiculo ? <Typography variant="caption" color="error">
                         {errors.vehiculo.message}
-                      </Typography>
-                    )}
+                      </Typography> : null}
                   </FormControl>
                 </Grid>
 
                 <Grid xs={12} md={6}>
-                  <FormControl fullWidth error={!!errors.matricula}>
+                  <FormControl fullWidth error={Boolean(errors.matricula)}>
                     <InputLabel>Matrícula</InputLabel>
                     <OutlinedInput
                       {...register('matricula')}
                       label="Matrícula"
                     />
-                    {errors.matricula && (
-                      <Typography variant="caption" color="error">
+                    {errors.matricula ? <Typography variant="caption" color="error">
                         {errors.matricula.message}
-                      </Typography>
-                    )}
+                      </Typography> : null}
                   </FormControl>
                 </Grid>
-              </Grid>
-            )}
+              </Grid> : null}
           </Grid>
         </CardContent>
         <Divider />

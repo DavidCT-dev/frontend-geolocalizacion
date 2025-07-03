@@ -183,19 +183,16 @@ function NavItem({ disabled, external, href, icon, matcher, pathname, title, chi
             {title}
           </Typography>
         </Box>
-        {hasChildren && (
-          <CaretUpDownIcon
+        {hasChildren ? <CaretUpDownIcon
             fontSize="var(--icon-fontSize-sm)"
             style={{
               transform: open ? 'rotate(180deg)' : 'none',
               transition: 'transform 0.2s ease-in-out'
             }}
-          />
-        )}
+          /> : null}
       </Box>
 
-      {hasChildren && open && (
-        <Stack
+      {hasChildren && open ? <Stack
           component="ul"
           spacing={1}
           sx={{
@@ -209,8 +206,7 @@ function NavItem({ disabled, external, href, icon, matcher, pathname, title, chi
           {children?.map((child:any) => (
             <NavItem key={child.key} pathname={pathname} {...child} />
           ))}
-        </Stack>
-      )}
+        </Stack> : null}
     </li>
   );
 }

@@ -7,7 +7,7 @@ import CardActions from '@mui/material/CardActions';
 import CardContent from '@mui/material/CardContent';
 import FormControl from '@mui/material/FormControl';
 import OutlinedInput from '@mui/material/OutlinedInput';
-import styles from './../../styles/components/profile.module.css';
+import styles from "../../styles/components/profile.module.css";
 import { useUser } from '@/hooks/use-user';
 import { Alert } from '@mui/material';
 
@@ -85,8 +85,8 @@ export function ChangePasswordForm({ user }: any): React.JSX.Element {
       <form onSubmit={handleSubmit}>
         <Card>
           <CardContent className={styles.form_container}>
-            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-            {success && <Alert severity="success" sx={{ mb: 2 }}>Contraseña actualizada correctamente</Alert>}
+            {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
+            {success ? <Alert severity="success" sx={{ mb: 2 }}>Contraseña actualizada correctamente</Alert> : null}
 
             <FormControl fullWidth required sx={{ mb: 2 }}>
               <label>Contraseña actual</label>

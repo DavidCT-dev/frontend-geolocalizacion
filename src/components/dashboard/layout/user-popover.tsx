@@ -13,7 +13,7 @@ import { SignOut as SignOutIcon } from '@phosphor-icons/react/dist/ssr/SignOut';
 import { User as UserIcon } from '@phosphor-icons/react/dist/ssr/User';
 
 import { paths } from '@/paths';
-import { User } from '@/types/user';
+import { type User } from '@/types/user';
 
 interface UserPopoverProps {
   anchorEl: Element | null;

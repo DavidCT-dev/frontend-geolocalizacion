@@ -41,7 +41,7 @@ export function UserProvider({ children }: { children: React.ReactNode }): React
 
   // Función para extraer los permisos
   const extractPermissions = React.useCallback((user: User | null): string[] => {
-    if (!user || !user.rol) return [];
+    if (!user?.rol) return [];
     return Array.isArray(user.rol.permisoIds)
       ? user.rol.permisoIds.map((permiso: any) =>
           typeof permiso === 'string' ? permiso : permiso.nombre
@@ -108,7 +108,7 @@ export function UserProvider({ children }: { children: React.ReactNode }): React
     if (error) {
       setState((prev) => ({
         ...prev,
-        error: error ,
+        error ,
         isLoading: false
       }));
       // console.log('context',error)
@@ -165,7 +165,7 @@ export function UserProvider({ children }: { children: React.ReactNode }): React
 
   React.useEffect(() => {
     setIsMounted(true);
-    return () => setIsMounted(false);
+    return () => { setIsMounted(false); };
   }, []);
 
   React.useEffect(() => {

@@ -7,13 +7,13 @@ import CardActions from '@mui/material/CardActions';
 import CardContent from '@mui/material/CardContent';
 import FormControl from '@mui/material/FormControl';
 import OutlinedInput from '@mui/material/OutlinedInput';
-import { CardHeader, InputLabel, Link, MenuItem, Select, SelectChangeEvent, Typography } from '@mui/material';
+import { CardHeader, InputLabel, Link, MenuItem, Select, type SelectChangeEvent, Typography } from '@mui/material';
 
 export function CreateProfileForm(): React.JSX.Element {
     const [rol, setRol] = React.useState('');
 
     const handleChange = (event: SelectChangeEvent) => {
-        setRol(event.target.value as string);
+        setRol(event.target.value);
     };
     return (
         <div>

@@ -115,39 +115,35 @@ export function TableUserHeader({ isDriver, refreshData, roles, refreshRoles }: 
           <Typography variant="h2">Datos</Typography>
         </CardContent>
         <CardContent sx={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', gap: '3rem' }}>
-          {permissions?.includes('crear-rol') && (
-            <Button
+          {permissions?.includes('crear-rol') ? <Button
               variant="contained"
               startIcon={<AddIcon />}
-              onClick={() => setOpenRoleModal(true)}
+              onClick={() => { setOpenRoleModal(true); }}
             >
               Crear Rol
-            </Button>
-          )}
+            </Button> : null}
 
-          {permissions?.includes('actualizar-rol') && roles.length > 0 && (
-            <Button
+          {permissions?.includes('actualizar-rol') && roles.length > 0 ? <Button
               variant="contained"
               color="secondary"
               startIcon={<EditIcon />}
-              onClick={() => handleEditRole(roles)}
+              onClick={() => { handleEditRole(roles); }}
             >
               Actualizar Rol
-            </Button>
-          )}
+            </Button> : null}
         </CardContent>
       </Card>
 
       <CreateRoleModal
         open={openRoleModal}
-        onClose={() => setOpenRoleModal(false)}
+        onClose={() => { setOpenRoleModal(false); }}
         permissions={permisos}
         onCreateRole={handleCreateRole}
       />
 
       <EditRoleModal
         open={openEditRoleModal}
-        onClose={() => setOpenEditRoleModal(false)}
+        onClose={() => { setOpenEditRoleModal(false); }}
         roles={roles}
         permissions={permisos}
         onUpdateRole={handleUpdateRole}

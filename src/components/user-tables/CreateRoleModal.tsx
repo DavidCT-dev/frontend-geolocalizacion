@@ -97,7 +97,7 @@ export function CreateRoleModal({
             fullWidth
             label="Nombre del rol"
             value={roleName}
-            onChange={(e) => setRoleName(e.target.value)}
+            onChange={(e) => { setRoleName(e.target.value); }}
             sx={{ mb: 3 }}
             disabled={loading}
           />
@@ -119,7 +119,7 @@ export function CreateRoleModal({
                     control={
                       <Checkbox
                         checked={selectedPermisos.includes(p._id)}
-                        onChange={() => togglePermiso(p._id)}
+                        onChange={() => { togglePermiso(p._id); }}
                         disabled={loading}
                       />
                     }
@@ -143,7 +143,7 @@ export function CreateRoleModal({
                     control={
                       <Checkbox
                         checked={selectedPermisos.includes(p._id)}
-                        onChange={() => togglePermiso(p._id)}
+                        onChange={() => { togglePermiso(p._id); }}
                         disabled={loading}
                       />
                     }

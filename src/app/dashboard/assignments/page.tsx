@@ -21,9 +21,10 @@ import {
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { useForm, Controller } from 'react-hook-form';
-import dayjs, { Dayjs } from 'dayjs';
+import dayjs, { type Dayjs } from 'dayjs';
 import 'dayjs/locale/es';
 import { useUser } from "@/hooks/use-user";
+
 dayjs.locale('es');
 
 interface FormValues {
@@ -285,7 +286,7 @@ export default function Page(): JSX.Element {
       <TableCell key={`check-${lineIndex}-${i}`} align="center">
         <Checkbox
           checked={asignaciones[lineIndex]?.[i] || false}
-          onChange={() => toggleCheckbox(lineIndex, i)}
+          onChange={() => { toggleCheckbox(lineIndex, i); }}
           color="primary"
           disabled={loading || !conductor || sinMatricula || restriccion}
           title={
@@ -372,20 +373,17 @@ export default function Page(): JSX.Element {
           />
 
 
-          {permissions?.includes('crear-asignacion') && (
-            <Button
+          {permissions?.includes('crear-asignacion') ? <Button
               variant="contained"
               color="primary"
               onClick={handleAsignar}
               disabled={!fechaInicio || !conductor || loading}
             >
               {loading ? 'Enviando...' : 'Asignar'}
-            </Button>
-          )}
+            </Button> : null}
         </Box>
 
-        {fechaInicio && (
-          <TableContainer component={Paper}>
+        {fechaInicio ? <TableContainer component={Paper}>
             <Table>
               <TableHead>
                 <TableRow>
@@ -393,7 +391,7 @@ export default function Page(): JSX.Element {
                   {generateDaysHeaders(fechaInicio)}
                 </TableRow>
                 <TableRow>
-                  <TableCell></TableCell>
+                  <TableCell />
                   {generateDaysSubheaders(fechaInicio)}
                 </TableRow>
               </TableHead>
@@ -406,17 +404,16 @@ export default function Page(): JSX.Element {
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
-        )}
+          </TableContainer> : null}
       </Box>
 
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
-        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        onClose={() => { setSnackbar(prev => ({ ...prev, open: false })); }}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}>
+        <Alert severity={snackbar.severity} onClose={() => { setSnackbar(prev => ({ ...prev, open: false })); }}>
           {snackbar.message}
         </Alert>
       </Snackbar>

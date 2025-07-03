@@ -122,7 +122,7 @@ export function EditRoleModal({
             <Select
               labelId="role-select-label"
               value={selectedRoleId}
-              onChange={(e) => setSelectedRoleId(e.target.value)}
+              onChange={(e) => { setSelectedRoleId(e.target.value); }}
               label="Seleccionar Rol"
               disabled={loading}
             >
@@ -138,7 +138,7 @@ export function EditRoleModal({
             fullWidth
             label="Nombre del rol"
             value={roleName}
-            onChange={(e) => setRoleName(e.target.value)}
+            onChange={(e) => { setRoleName(e.target.value); }}
             sx={{ mb: 3 }}
             disabled={loading}
           />
@@ -159,7 +159,7 @@ export function EditRoleModal({
                     control={
                       <Checkbox
                         checked={selectedPermisos.includes(p._id)}
-                        onChange={() => togglePermiso(p._id)}
+                        onChange={() => { togglePermiso(p._id); }}
                         disabled={loading}
                       />
                     }
@@ -182,7 +182,7 @@ export function EditRoleModal({
                     control={
                       <Checkbox
                         checked={selectedPermisos.includes(p._id)}
-                        onChange={() => togglePermiso(p._id)}
+                        onChange={() => { togglePermiso(p._id); }}
                         disabled={loading}
                       />
                     }

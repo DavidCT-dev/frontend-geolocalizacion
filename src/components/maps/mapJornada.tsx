@@ -35,12 +35,12 @@ interface MapJornadaProps {
   center?: any | null;
 }
 
-const MapJornada = ({
+function MapJornada({
   routePoints = [],
   stopPoints = [],
   ubicacionActual,
   center
-}:any) => {
+}:any) {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
@@ -82,7 +82,7 @@ const MapJornada = ({
       mapContainerStyle={containerStyle}
       center={mapCenter}
       zoom={14}
-      onLoad={(map) => setMap(map)}
+      onLoad={(map) => { setMap(map); }}
       options={{
         streetViewControl: false,
         mapTypeControl: false,
@@ -114,14 +114,14 @@ const MapJornada = ({
               fontWeight: 'bold',
               className: 'map-stop-label',
             }}
-            onClick={() => setSelectedStop(stop)}
+            onClick={() => { setSelectedStop(stop); }}
           />
 
           {/* InfoWindow */}
           {selectedStop?.nombre === stop.nombre && (
             <InfoWindow
               position={{ lat: stop.latitud, lng: stop.longitud }}
-              onCloseClick={() => setSelectedStop(null)}
+              onCloseClick={() => { setSelectedStop(null); }}
             >
               <div style={{ padding: '8px', maxWidth: '200px' }}>
                 <strong>🚏 {stop.nombre}</strong>
@@ -136,18 +136,16 @@ const MapJornada = ({
       ))}
 
       {/* Marcador de ubicación actual */}
-      {ubicacionActual && (
-        <Marker
+      {ubicacionActual ? <Marker
           position={{
             lat: ubicacionActual.latitud,
             lng: ubicacionActual.longitud
           }}
           icon={createCurrentLocationIcon()}
           title="Ubicación actual"
-        />
-      )}
+        /> : null}
     </GoogleMap>
   );
-};
+}
 
 export default MapJornada;

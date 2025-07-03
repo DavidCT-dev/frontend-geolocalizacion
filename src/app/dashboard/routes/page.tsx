@@ -1,10 +1,7 @@
 'use client'
-import { Metadata } from "next";
-import { config } from "@/config";
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import MapHeader from "@/components/maps/map-header";
 import dynamic from "next/dynamic";
-import Grid from '@mui/material/Unstable_Grid2';
 import { Box, Button, Card, CardContent, Typography } from "@mui/material";
 import BusStopList from "@/components/maps/bus-stop-list";
 
@@ -99,25 +96,21 @@ export default function Page(): React.JSX.Element {
                 <Typography variant="h6" gutterBottom>
                   Paradas de {lineaSeleccionada.nombre}
                 </Typography>
-                {lineaSeleccionada.tieneVuelta && (
-                  <Button
+                {lineaSeleccionada.tieneVuelta ? <Button
                     variant="outlined"
                     onClick={toggleDirection}
                     sx={{ textTransform: 'capitalize' }}
                   >
                     {currentDirection === 'ida' ? 'Mostrar vuelta' : 'Mostrar ida'}
-                  </Button>
-                )}
+                  </Button> : null}
               </Box>
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <Typography variant="subtitle2" color="text.secondary">
                   Dirección: {currentDirection === 'ida' ? 'Ida' : 'Vuelta'}
                 </Typography>
-                {hasAlternativeRoute && (
-                  <Typography variant="subtitle2" color="primary">
+                {hasAlternativeRoute ? <Typography variant="subtitle2" color="primary">
                     (Con ruta alternativa)
-                  </Typography>
-                )}
+                  </Typography> : null}
               </Box>
               <BusStopList list={lineaSeleccionada.paradas.map(p => p.nombre)} />
             </>

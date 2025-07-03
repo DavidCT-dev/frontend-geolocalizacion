@@ -12,7 +12,7 @@ import {
 import { userSchema } from '../../schemas';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, Controller } from 'react-hook-form';
-import { z as zod } from 'zod';
+import { type z as zod } from 'zod';
 
 type FormValues = zod.infer<typeof userSchema>;
 
@@ -71,7 +71,7 @@ export function CreateUserModal({ open, onClose, roles, onCreateUser }: any) {
                   {...field}
                   fullWidth
                   label="Nombre"
-                  error={!!errors.nombre}
+                  error={Boolean(errors.nombre)}
                   helperText={errors.nombre?.message}
                 />
               )}
@@ -85,7 +85,7 @@ export function CreateUserModal({ open, onClose, roles, onCreateUser }: any) {
                   fullWidth
                   label="Email"
                   type="email"
-                  error={!!errors.email}
+                  error={Boolean(errors.email)}
                   helperText={errors.email?.message}
                 />
               )}
@@ -98,7 +98,7 @@ export function CreateUserModal({ open, onClose, roles, onCreateUser }: any) {
                   {...field}
                   fullWidth
                   label="CI"
-                  error={!!errors.ci}
+                  error={Boolean(errors.ci)}
                   helperText={errors.ci?.message}
                 />
               )}
@@ -111,7 +111,7 @@ export function CreateUserModal({ open, onClose, roles, onCreateUser }: any) {
                   {...field}
                   fullWidth
                   label="Teléfono"
-                  error={!!errors.telefono}
+                  error={Boolean(errors.telefono)}
                   helperText={errors.telefono?.message}
                 />
               )}
@@ -125,7 +125,7 @@ export function CreateUserModal({ open, onClose, roles, onCreateUser }: any) {
                   select
                   fullWidth
                   label="Rol"
-                  error={!!errors.rol}
+                  error={Boolean(errors.rol)}
                   helperText={errors.rol?.message}
                 >
                   {roles.map((roleItem:any) => (

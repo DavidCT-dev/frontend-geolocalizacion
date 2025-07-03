@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState } from "react";
-import { Avatar, Box, Card, CardContent, CardHeader, Stack, Typography, Button, CardActions, Divider } from "@mui/material";
+import { Avatar, Box, Card, CardContent, Stack, Typography, Button, CardActions, Divider } from "@mui/material";
 import { useUser } from "@/hooks/use-user";
 import { logger } from "@/lib/default-logger";
 import Grid from '@mui/material/Unstable_Grid2';
 import { AccountDetailsForm } from "@/components/dashboard/account/account-details-form";
 import { ChangePasswordForm } from "@/components/profile/change-password-form";
-import styles from "./../../../styles/pages/profile.module.css";
+import styles from "../../../styles/pages/profile.module.css";
 
 
 
@@ -93,7 +93,7 @@ export default function ProfilePage(): React.JSX.Element {
       });
 
        if (!res.ok) {
-        return  alert('Error al actualizar')
+        alert('Error al actualizar'); return;
       }
 
       await checkSession?.();

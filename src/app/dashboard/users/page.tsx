@@ -5,7 +5,7 @@ import { config } from "@/config";
 import React, { useEffect, useState } from "react";
 import {TableUserHeader} from "@/components/user-tables/table-user-header";
 import { Box } from "@mui/material";
-import { GeneralUser } from "@/types/generalUser";
+import { type GeneralUser } from "@/types/generalUser";
 import UserTable from "@/components/user-tables/UserTable";
 
 // export const metadata = { title: `Usuarios | ${config.site.name}` } satisfies Metadata;

@@ -50,20 +50,16 @@ export default function UserTableRow({
         <TableCell>{String(row.carId)}</TableCell>
       )}
       <TableCell>
-        {permissions?.includes('editar-usuario') && (
-          <Tooltip title="Editar">
-            <IconButton color="primary" onClick={() => onEdit(row)}>
+        {permissions?.includes('editar-usuario') ? <Tooltip title="Editar">
+            <IconButton color="primary" onClick={() => { onEdit(row); }}>
               <EditIcon />
             </IconButton>
-          </Tooltip>
-        )}
-        {permissions?.includes('eliminar-usuario') && (
-          <Tooltip title="Eliminar">
-            <IconButton color="error" onClick={() => onDelete(row._id)}>
+          </Tooltip> : null}
+        {permissions?.includes('eliminar-usuario') ? <Tooltip title="Eliminar">
+            <IconButton color="error" onClick={() => { onDelete(row._id); }}>
               <DeleteIcon />
             </IconButton>
-          </Tooltip>
-        )}
+          </Tooltip> : null}
       </TableCell>
     </TableRow>
   );

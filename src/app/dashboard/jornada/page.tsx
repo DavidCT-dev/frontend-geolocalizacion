@@ -1,5 +1,5 @@
 'use client';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Button,
@@ -16,7 +16,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dynamic from 'next/dynamic';
 import { useUser } from "@/hooks/use-user";
-import { io, Socket } from 'socket.io-client';
+import { io, type Socket } from 'socket.io-client';
 
 interface Punto {
   latitud: number;
@@ -96,9 +96,9 @@ const socketInstance = io(process.env.NEXT_PUBLIC_WEB_SOCKET_URL_CLOUD || 'http:
 
 
   const handleStartJornada = () => {
-    if (!socket?.connected) return setError('No hay conexión en tiempo real disponible');
-    if (!linea) return setError('No hay ruta asignada');
-    if (!navigator.geolocation) return setError('Geolocalización no soportada');
+    if (!socket?.connected) { setError('No hay conexión en tiempo real disponible'); return; }
+    if (!linea) { setError('No hay ruta asignada'); return; }
+    if (!navigator.geolocation) { setError('Geolocalización no soportada'); return; }
 
     // if (jornadaStatus == 'inactiva'){
     //   alert('La jornada a terminado!!!')
@@ -140,7 +140,7 @@ const socketInstance = io(process.env.NEXT_PUBLIC_WEB_SOCKET_URL_CLOUD || 'http:
               estado: estadoActual
             });
           },
-          (err) => console.error('Error obteniendo ubicación:', err),
+          (err) => { console.error('Error obteniendo ubicación:', err); },
           { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
         );
 
@@ -295,7 +295,7 @@ const socketInstance = io(process.env.NEXT_PUBLIC_WEB_SOCKET_URL_CLOUD || 'http:
           Jornada {jornadaStatus !== 'inactiva' && `(Estado: ${jornadaStatus})`}
         </Typography>
 
-        {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+        {error ? <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert> : null}
 
         {loading ? (
           <Box display="flex" justifyContent="center" my={4}>

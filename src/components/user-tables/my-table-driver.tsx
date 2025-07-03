@@ -12,8 +12,8 @@ import * as React from "react";
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import { useSelection } from '@/hooks/use-selection';
-import { GeneralUser } from "@/types/generalUser";
-import { Driver } from "@/types/driver";
+import { type GeneralUser } from "@/types/generalUser";
+import { type Driver } from "@/types/driver";
 import { useUser } from "@/hooks/use-user";
 import { driverSchema } from '../../schemas'
 import { Controller, useForm } from "react-hook-form";
@@ -25,7 +25,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 // import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 
 const modalStyle = {
-  position: 'absolute' as 'absolute',
+  position: 'absolute' as const,
   top: '50%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
@@ -108,8 +108,7 @@ export default function TableDriver({
     if (!onSearch) {
       const filtered = rows.filter(row =>
         Object.values(row).some(
-          value => value &&
-            value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+          value => value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
         ));
       setFilteredRows(filtered);
     }
@@ -341,25 +340,21 @@ export default function TableDriver({
 
                   <TableCell>
                     <Stack direction="row" spacing={1}>
-                      {permissions?.includes('editar-conductor') && (
-                        <IconButton
+                      {permissions?.includes('editar-conductor') ? <IconButton
                           color="primary"
-                          onClick={() => handleEdit(row._id as any, row)}
+                          onClick={() => { handleEdit(row._id as any, row); }}
                           aria-label="editar"
                         >
                           <EditIcon />
-                        </IconButton>
-                      )}
+                        </IconButton> : null}
 
-                      {permissions?.includes('eliminar-conductor') && (
-                        <IconButton
+                      {permissions?.includes('eliminar-conductor') ? <IconButton
                           color="error"
-                          onClick={() => handleDeleteClick(row._id as any)}
+                          onClick={() => { handleDeleteClick(row._id as any); }}
                           aria-label="eliminar"
                         >
                           <DeleteIcon />
-                        </IconButton>
-                      )}
+                        </IconButton> : null}
 
                       {/* <IconButton
                         color="secondary"
@@ -382,9 +377,9 @@ export default function TableDriver({
       <TablePagination
         component="div"
         count={onSearch ? count : displayRows.length}
-        onPageChange={(event, newPage) => onPageChange(newPage)}
+        onPageChange={(event, newPage) => { onPageChange(newPage); }}
         onRowsPerPageChange={(event) =>
-          onRowsPerPageChange(parseInt(event.target.value, 10))
+          { onRowsPerPageChange(parseInt(event.target.value, 10)); }
         }
         page={page}
         rowsPerPage={rowsPerPage}
@@ -394,7 +389,7 @@ export default function TableDriver({
       {/* Delete Confirmation Dialog */}
       <Dialog
         open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
+        onClose={() => { setDeleteDialogOpen(false); }}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
@@ -406,7 +401,7 @@ export default function TableDriver({
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
+          <Button onClick={() => { setDeleteDialogOpen(false); }}>Cancelar</Button>
           <Button onClick={handleDeleteConfirm} color="error" autoFocus>
             Eliminar
           </Button>
@@ -448,7 +443,7 @@ export default function TableDriver({
                   fullWidth
                   label="Tipo de vehículo"
                   variant="outlined"
-                  error={!!errors.vehiculo}
+                  error={Boolean(errors.vehiculo)}
                   helperText={errors.vehiculo?.message}
                 >
                   {vehicleOptions.map((option) => (
@@ -470,7 +465,7 @@ export default function TableDriver({
                   fullWidth
                   label="N° Matrícula"
                   variant="outlined"
-                  error={!!errors.matricula}
+                  error={Boolean(errors.matricula)}
                   helperText={errors.matricula?.message || "Formato: 1234-ABC o ABC-123"}
                   onChange={(e) => {
                     // Eliminar espacios y convertir a mayúsculas

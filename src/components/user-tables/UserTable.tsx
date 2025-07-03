@@ -20,7 +20,7 @@ interface UserTableProps {
   count?: number;
   page?: number;
   headerTable: string[];
-  rows?: Array<any>;
+  rows?: any[];
   rowsPerPage?: number;
   onPageChange?: (newPage: number) => void;
   onRowsPerPageChange?: (newRowsPerPage: number) => void;
@@ -64,7 +64,7 @@ export default function UserTable({
     if (!onSearch) {
       const filtered = rows.filter(row =>
         Object.values(row).some(
-          value => value && value.toString().toLowerCase().includes(searchTerm.toLowerCase()))
+          value => value?.toString().toLowerCase().includes(searchTerm.toLowerCase()))
       );
       setFilteredRows(filtered);
     }
@@ -179,15 +179,13 @@ export default function UserTable({
           }}
           sx={{ width: '300px' }}
         />
-        {permissions?.includes('crear-usuario') && (
-          <Button
+        {permissions?.includes('crear-usuario') ? <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => setCreateModalOpen(true)}
+            onClick={() => { setCreateModalOpen(true); }}
           >
             Nuevo Usuario
-          </Button>
-        )}
+          </Button> : null}
       </Box>
 
       <Divider />
@@ -221,8 +219,8 @@ export default function UserTable({
       <TablePagination
         component="div"
         count={onSearch ? count : displayRows.length}
-        onPageChange={(_, newPage) => onPageChange(newPage)}
-        onRowsPerPageChange={(e) => onRowsPerPageChange(parseInt(e.target.value, 10))}
+        onPageChange={(_, newPage) => { onPageChange(newPage); }}
+        onRowsPerPageChange={(e) => { onRowsPerPageChange(parseInt(e.target.value, 10)); }}
         page={page}
         rowsPerPage={rowsPerPage}
         rowsPerPageOptions={[5, 10, 25]}
@@ -230,13 +228,13 @@ export default function UserTable({
 
       <DeleteUserDialog
         open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
+        onClose={() => { setDeleteDialogOpen(false); }}
         onConfirm={handleDeleteConfirm}
       />
 
       <CreateUserModal
         open={createModalOpen}
-        onClose={() => setCreateModalOpen(false)}
+        onClose={() => { setCreateModalOpen(false); }}
         roles={roles}
         refreshData={refreshData}
         showSnackbar={showSnackbar}
@@ -245,7 +243,7 @@ export default function UserTable({
 
       <EditUserModal
         open={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
+        onClose={() => { setEditModalOpen(false); }}
         user={currentUser}
         roles={roles}
         refreshData={refreshData}

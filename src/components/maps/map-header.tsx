@@ -58,7 +58,7 @@ const COLORES = {
 };
 
 const modalStyle = {
-  position: 'absolute' as 'absolute',
+  position: 'absolute' as const,
   top: '50%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
@@ -486,7 +486,7 @@ setLinea(updatedLinea)
               <ListItemSecondaryAction>
                 <IconButton
                   edge="end"
-                  onClick={() => handleRemoveRoutePoint(direction, index)}
+                  onClick={() => { handleRemoveRoutePoint(direction, index); }}
                 >
                   <CloseIcon fontSize="small" />
                 </IconButton>
@@ -540,7 +540,7 @@ setLinea(updatedLinea)
               {rutaAlternativaIda.length > 0 && (
                 <IconButton
                   size="small"
-                  onClick={() => handleRemoveAlternative('ida')}
+                  onClick={() => { handleRemoveAlternative('ida'); }}
                   sx={{ color: COLORES.IDA.alternativa }}
                 >
                   <CloseIcon fontSize="small" />
@@ -576,8 +576,7 @@ setLinea(updatedLinea)
         </Paper>
 
         {/* Alternativa de vuelta - solo si tiene ruta de vuelta */}
-        {hasReturnRoute && (
-          <Paper
+        {hasReturnRoute ? <Paper
             elevation={2}
             sx={{
               p: 2,
@@ -611,7 +610,7 @@ setLinea(updatedLinea)
                 {rutaAlternativaVuelta.length > 0 && (
                   <IconButton
                     size="small"
-                    onClick={() => handleRemoveAlternative('vuelta')}
+                    onClick={() => { handleRemoveAlternative('vuelta'); }}
                     sx={{ color: COLORES.VUELTA.alternativa }}
                   >
                     <CloseIcon fontSize="small" />
@@ -644,8 +643,7 @@ setLinea(updatedLinea)
                 No hay ruta alternativa definida
               </Typography>
             )}
-          </Paper>
-        )}
+          </Paper> : null}
       </>
     );
   };
@@ -659,7 +657,7 @@ setLinea(updatedLinea)
 
         {renderRoutePointsList('ida')}
 
-        {hasReturnRoute && renderRoutePointsList('vuelta')}
+        {hasReturnRoute ? renderRoutePointsList('vuelta') : null}
       </>
     );
   };
@@ -690,7 +688,7 @@ setLinea(updatedLinea)
                   secondary={`${parada.latitud.toFixed(4)}, ${parada.longitud.toFixed(4)}`}
                 />
                 <ListItemSecondaryAction>
-                  <IconButton edge="end" onClick={() => handleRemoveStop(index)}>
+                  <IconButton edge="end" onClick={() => { handleRemoveStop(index); }}>
                     <CloseIcon fontSize="small" />
                   </IconButton>
                 </ListItemSecondaryAction>
@@ -742,8 +740,7 @@ setLinea(updatedLinea)
           justifyContent: 'flex-end',
           padding: '1.5rem'
         }}>
-          {permissions?.includes('eliminar-ruta') && (
-            <Button
+          {permissions?.includes('eliminar-ruta') ? <Button
               variant="contained"
               color="error"
               onClick={handleDeleteClick}
@@ -762,8 +759,7 @@ setLinea(updatedLinea)
               startIcon={<DeleteIcon />}
             >
               Eliminar Ruta
-            </Button>
-          )}
+            </Button> : null}
 
           <Button
             variant="contained"
@@ -786,8 +782,7 @@ setLinea(updatedLinea)
             Editar
           </Button>
 
-          {permissions?.includes('crear-ruta') && (
-            <Button
+          {permissions?.includes('crear-ruta') ? <Button
               variant="contained"
               startIcon={<AddIcon />}
               onClick={handleOpen}
@@ -806,14 +801,13 @@ setLinea(updatedLinea)
               }}
             >
               Crear Línea
-            </Button>
-          )}
+            </Button> : null}
         </CardContent>
       </Card>
 
       <Dialog
         open={openDeleteConfirm}
-        onClose={() => setOpenDeleteConfirm(false)}
+        onClose={() => { setOpenDeleteConfirm(false); }}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
@@ -827,7 +821,7 @@ setLinea(updatedLinea)
         </DialogContent>
         <DialogActions>
           <Button
-            onClick={() => setOpenDeleteConfirm(false)}
+            onClick={() => { setOpenDeleteConfirm(false); }}
             color="primary"
             disabled={isLoading}
           >
@@ -877,14 +871,14 @@ setLinea(updatedLinea)
                     fullWidth
                     label="Nombre de la ruta"
                     value={routeName}
-                    onChange={(e) => setRouteName(e.target.value)}
+                    onChange={(e) => { setRouteName(e.target.value); }}
                   />
 
                   <FormControlLabel
                     control={
                       <Switch
                         checked={hasReturnRoute}
-                        onChange={(e) => setHasReturnRoute(e.target.checked)}
+                        onChange={(e) => { setHasReturnRoute(e.target.checked); }}
                         color="secondary"
                       />
                     }
@@ -948,7 +942,7 @@ setLinea(updatedLinea)
                   <Box sx={{ display: 'flex', gap: 2 }}>
                     <Button
                       variant={currentDirection === 'ida' ? 'contained' : 'outlined'}
-                      onClick={() => setCurrentDirection('ida')}
+                      onClick={() => { setCurrentDirection('ida'); }}
                       fullWidth
                       sx={{
                         backgroundColor: currentDirection === 'ida' ? COLORES.IDA.principal : 'inherit',
@@ -962,7 +956,7 @@ setLinea(updatedLinea)
                     </Button>
                     <Button
                       variant={currentDirection === 'vuelta' ? 'contained' : 'outlined'}
-                      onClick={() => setCurrentDirection('vuelta')}
+                      onClick={() => { setCurrentDirection('vuelta'); }}
                       fullWidth
                       disabled={!hasReturnRoute}
                       sx={{
@@ -982,7 +976,7 @@ setLinea(updatedLinea)
                       fullWidth
                       label="Nombre de la parada"
                       value={currentStopName}
-                      onChange={(e) => setCurrentStopName(e.target.value)}
+                      onChange={(e) => { setCurrentStopName(e.target.value); }}
                       helperText="Escriba el nombre y luego haga click en el mapa"
                       sx={{
                         '& .MuiInputLabel-root.Mui-focused': {
@@ -1083,14 +1077,14 @@ setLinea(updatedLinea)
                     fullWidth
                     label="Nombre de la ruta"
                     value={routeName}
-                    onChange={(e) => setRouteName(e.target.value)}
+                    onChange={(e) => { setRouteName(e.target.value); }}
                   />
 
                   <FormControlLabel
                     control={
                       <Switch
                         checked={hasReturnRoute}
-                        onChange={(e) => setHasReturnRoute(e.target.checked)}
+                        onChange={(e) => { setHasReturnRoute(e.target.checked); }}
                         color="secondary"
                       />
                     }
@@ -1154,7 +1148,7 @@ setLinea(updatedLinea)
                   <Box sx={{ display: 'flex', gap: 2 }}>
                     <Button
                       variant={currentDirection === 'ida' ? 'contained' : 'outlined'}
-                      onClick={() => setCurrentDirection('ida')}
+                      onClick={() => { setCurrentDirection('ida'); }}
                       fullWidth
                       sx={{
                         backgroundColor: currentDirection === 'ida' ? COLORES.IDA.principal : 'inherit',
@@ -1168,7 +1162,7 @@ setLinea(updatedLinea)
                     </Button>
                     <Button
                       variant={currentDirection === 'vuelta' ? 'contained' : 'outlined'}
-                      onClick={() => setCurrentDirection('vuelta')}
+                      onClick={() => { setCurrentDirection('vuelta'); }}
                       fullWidth
                       disabled={!hasReturnRoute}
                       sx={{
@@ -1188,7 +1182,7 @@ setLinea(updatedLinea)
                       fullWidth
                       label="Nombre de la parada"
                       value={currentStopName}
-                      onChange={(e) => setCurrentStopName(e.target.value)}
+                      onChange={(e) => { setCurrentStopName(e.target.value); }}
                       helperText="Escriba el nombre y luego haga click en el mapa"
                       sx={{
                         '& .MuiInputLabel-root.Mui-focused': {

@@ -10,12 +10,13 @@ import autoTable from 'jspdf-autotable';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import dayjs, { Dayjs } from 'dayjs';
+import dayjs, { type Dayjs } from 'dayjs';
 import 'dayjs/locale/es';
+
 dayjs.locale('es');
 
 const modalStyle = {
-  position: 'absolute' as 'absolute',
+  position: 'absolute' as const,
   top: '50%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
@@ -64,7 +65,7 @@ export default function Page(): React.JSX.Element {
 
   const tableHeader: string[] = ['NOMBRE', 'CI', 'TELÉFONO', 'CORREO', 'DESCRIPCIÓN VEHÍCULO', 'N° MATRÍCULA', 'MODIFICAR'];
 
-  const handleOpen = () => setOpen(true);
+  const handleOpen = () => { setOpen(true); };
   const handleClose = () => {
     setOpen(false);
     setSelectedDriver('');
@@ -72,7 +73,7 @@ export default function Page(): React.JSX.Element {
     setLicensePlate('');
   };
 
-  const handleOpenReportModal = () => setOpenReportModal(true);
+  const handleOpenReportModal = () => { setOpenReportModal(true); };
   const handleCloseReportModal = () => {
     setOpenReportModal(false);
     setSelectedDriverForReport('');
@@ -299,7 +300,7 @@ export default function Page(): React.JSX.Element {
               <TextField
                 select
                 value={selectedDriver}
-                onChange={(e) => setSelectedDriver(e.target.value)}
+                onChange={(e) => { setSelectedDriver(e.target.value); }}
                 label="Seleccionar conductor"
                 fullWidth
                 size="small"
@@ -319,7 +320,7 @@ export default function Page(): React.JSX.Element {
                 fullWidth
                 label="Tipo de vehículo"
                 value={vehicleName}
-                onChange={(e) => setVehicleName(e.target.value)}
+                onChange={(e) => { setVehicleName(e.target.value); }}
                 size="small"
               >
                 <MenuItem value="MiniBus">MiniBus</MenuItem>
@@ -330,7 +331,7 @@ export default function Page(): React.JSX.Element {
                 fullWidth
                 label="N° Matrícula"
                 value={licensePlate}
-                onChange={(e) => setLicensePlate(e.target.value)}
+                onChange={(e) => { setLicensePlate(e.target.value); }}
                 size="small"
               />
 
@@ -364,7 +365,7 @@ export default function Page(): React.JSX.Element {
               <TextField
                 select
                 value={selectedDriverForReport}
-                onChange={(e) => setSelectedDriverForReport(e.target.value)}
+                onChange={(e) => { setSelectedDriverForReport(e.target.value); }}
                 label="Seleccionar conductor"
                 fullWidth
                 size="small"

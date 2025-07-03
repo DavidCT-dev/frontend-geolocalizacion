@@ -57,7 +57,7 @@ export const authClient = {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({token:token}),
+        body: JSON.stringify({token}),
       });
 
       if (!response.ok) {
@@ -77,7 +77,7 @@ export const authClient = {
         return { error: 'Sesión inválida o expirada' };
       }
       const user = await res.json();
-      return { data: { user: user } };
+      return { data: { user } };
     } catch (err) {
       logger.error(err);
       return { error: 'Error al verificar sesión' };
