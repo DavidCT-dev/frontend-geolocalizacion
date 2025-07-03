@@ -2,7 +2,7 @@ app = "deploy-frontend-geolocalizacion"
 primary_region = "gru"
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = "dockerfile"
 
 [http_service]
   internal_port = 3000
