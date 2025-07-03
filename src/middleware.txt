@@ -6,7 +6,6 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const token = request.cookies.get('auth-token')?.value
 
-  // 1. Permitir todos los archivos estáticos y rutas de API
   const staticPaths = [
     '/_next/',
     '/favicon.ico',
@@ -22,7 +21,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // 2. Rutas públicas accesibles sin autenticación
   const publicPaths = [
     '/auth/send-password?token',
     '/auth/sign-in',
