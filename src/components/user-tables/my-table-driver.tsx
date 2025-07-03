@@ -230,46 +230,46 @@ export default function TableDriver({
     { value: 'MicroBus', label: 'MicroBus' }
   ];
 
-//   const generatePDF = (driverData: Driver) => {
-//   const doc = new jsPDF();
+  //   const generatePDF = (driverData: Driver) => {
+  //   const doc = new jsPDF();
 
-//   doc.setFontSize(18);
-//   doc.text('Información del Conductor', 14, 20);
+  //   doc.setFontSize(18);
+  //   doc.text('Información del Conductor', 14, 20);
 
-//   doc.setFontSize(12);
-//   doc.text(`Nombre: ${driverData.nombre}`, 14, 30);
-//   doc.text(`CI: ${driverData.ci}`, 14, 38);
-//   doc.text(`Teléfono: ${driverData.telefono}`, 14, 46);
-//   doc.text(`Email: ${driverData.email}`, 14, 54);
-//   doc.text(`Vehículo: ${driverData.vehiculo || 'Sin dato'}`, 14, 62);
-//   doc.text(`Matrícula: ${driverData.matricula || 'Sin dato'}`, 14, 70);
+  //   doc.setFontSize(12);
+  //   doc.text(`Nombre: ${driverData.nombre}`, 14, 30);
+  //   doc.text(`CI: ${driverData.ci}`, 14, 38);
+  //   doc.text(`Teléfono: ${driverData.telefono}`, 14, 46);
+  //   doc.text(`Email: ${driverData.email}`, 14, 54);
+  //   doc.text(`Vehículo: ${driverData.vehiculo || 'Sin dato'}`, 14, 62);
+  //   doc.text(`Matrícula: ${driverData.matricula || 'Sin dato'}`, 14, 70);
 
-//   autoTable(doc, {
-//     startY: 80,
-//     head: [['Campo', 'Valor']],
-//     body: [
-//       ['Nombre', driverData.nombre],
-//       ['CI', driverData.ci],
-//       ['Teléfono', driverData.telefono],
-//       ['Email', driverData.email],
-//       ['Vehículo', driverData.vehiculo || 'Sin dato'],
-//       ['Matrícula', driverData.matricula || 'Sin dato']
-//     ],
-//     styles: {
-//       halign: 'left',
-//       cellPadding: 5,
-//     },
-//     headStyles: {
-//       fillColor: [41, 128, 185],
-//       textColor: 255,
-//       fontStyle: 'bold'
-//     }
-//   });
+  //   autoTable(doc, {
+  //     startY: 80,
+  //     head: [['Campo', 'Valor']],
+  //     body: [
+  //       ['Nombre', driverData.nombre],
+  //       ['CI', driverData.ci],
+  //       ['Teléfono', driverData.telefono],
+  //       ['Email', driverData.email],
+  //       ['Vehículo', driverData.vehiculo || 'Sin dato'],
+  //       ['Matrícula', driverData.matricula || 'Sin dato']
+  //     ],
+  //     styles: {
+  //       halign: 'left',
+  //       cellPadding: 5,
+  //     },
+  //     headStyles: {
+  //       fillColor: [41, 128, 185],
+  //       textColor: 255,
+  //       fontStyle: 'bold'
+  //     }
+  //   });
 
-//   // 👇 Abrir en una nueva pestaña del navegador
-//   const pdfUrl = doc.output('bloburl');
-//   window.open(pdfUrl, '_blank');
-// };
+  //   // 👇 Abrir en una nueva pestaña del navegador
+  //   const pdfUrl = doc.output('bloburl');
+  //   window.open(pdfUrl, '_blank');
+  // };
 
   return (
     <Card>
@@ -471,7 +471,15 @@ export default function TableDriver({
                   label="N° Matrícula"
                   variant="outlined"
                   error={!!errors.matricula}
-                  helperText={errors.matricula?.message}
+                  helperText={errors.matricula?.message || "Formato: 1234-ABC o ABC-123"}
+                  onChange={(e) => {
+                    // Eliminar espacios y convertir a mayúsculas
+                    const value = e.target.value.replace(/\s/g, '').toUpperCase();
+                    field.onChange(value);
+                  }}
+                  inputProps={{
+                    maxLength: 8, // Longitud máxima para matrículas como "1234-ABC" (7 caracteres + posible guión)
+                  }}
                 />
               )}
             />

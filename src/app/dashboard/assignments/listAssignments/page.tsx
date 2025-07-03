@@ -1,108 +1,155 @@
 'use client';
-import { Box, Button, Modal, TextField, Typography, Stack, MenuItem, Card, CardContent, IconButton, Snackbar, Alert } from "@mui/material";
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import React, { useEffect, useState } from "react";
-import TableDriver from "@/components/user-tables/my-table-driver";
-import AddIcon from '@mui/icons-material/Add';
+import React, { useEffect, useState } from 'react';
+import {
+  Autocomplete,
+  Box,
+  Button,
+  Checkbox,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
+  Snackbar,
+  Alert,
+  Menu,
+  MenuItem,
+  TablePagination,
+  InputAdornment,
+  IconButton,
+  CircularProgress
+} from '@mui/material';
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { useForm, Controller } from 'react-hook-form';
+import dayjs, { Dayjs } from 'dayjs';
+import 'dayjs/locale/es';
+import { jsPDF } from 'jspdf';
+import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
+import DeleteIcon from '@mui/icons-material/Delete';
+import Modal from '@mui/material/Modal';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
 import CloseIcon from '@mui/icons-material/Close';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+dayjs.locale('es');
 
-const modalStyle = {
-  position: 'absolute' as 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: 600,
-  bgcolor: 'background.paper',
-  boxShadow: 24,
-  p: 4,
-  borderRadius: 2,
-};
+interface Driver {
+  _id: string;
+  nombre: string;
+  deleted?: boolean;
+}
 
-export default function Page(): React.JSX.Element {
-  const [open, setOpen] = useState(false);
-  const [selectedDriver, setSelectedDriver] = useState('');
-  const [vehicleName, setVehicleName] = useState('');
-  const [licensePlate, setLicensePlate] = useState('');
+interface Ruta {
+  _id: string;
+  nombre: string;
+}
+
+interface Asignacion {
+  _id: string;
+  conductorId?: {
+    _id: any;
+    nombre: string;
+  };
+  rutaId?: {
+    nombre: string;
+  };
+  fecha: string;
+}
+
+interface FormValues {
+  fechaInicio: Dayjs;
+  search: Driver | null;
+}
+
+export default function Page(): JSX.Element {
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [rutas, setRutas] = useState<Ruta[]>([]);
+  const [asignaciones, setAsignaciones] = useState<Asignacion[]>([]);
+  const [filteredAsignaciones, setFilteredAsignaciones] = useState<Asignacion[]>([]);
+  const [selectedAsignaciones, setSelectedAsignaciones] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'success' as 'success' | 'error',
   });
-  const [drivers, setDrivers] = useState([]);
-  const [pdfModalOpen, setPdfModalOpen] = useState(false);
-  const [selectedDriverForPdf, setSelectedDriverForPdf] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState<any>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [rutaFilter, setRutaFilter] = useState<string | null>(null);
+  const [asignacionesToDelete, setAsignacionesToDelete] = useState<string[]>([]);
+  const [openModal, setOpenModal] = useState(false);
+  const [asignacionEdit, setAsignacionEdit] = useState<Asignacion | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
 
-  const getDrivers = async () => {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL_BACK}user/drivers`);
-      const data = await response.json();
-      setDrivers(data);
-    } catch (error) {
-      setSnackbar({
-        open: true,
-        message: 'Error al cargar los conductores',
-        severity: 'error',
-      });
+  const [openReportModal, setOpenReportModal] = useState(false);
+  const [reportMonth, setReportMonth] = useState<Dayjs>(dayjs());
+  const [selectedRutaForReport, setSelectedRutaForReport] = useState<string | null>(null);
+
+  // Función para abrir el modal de edición
+  const handleOpenEditModal = (asignacion: Asignacion) => {
+    setAsignacionEdit(asignacion);
+    setOpenModal(true);
+  };
+
+  // Función para cerrar el modal
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    setAsignacionEdit(null);
+  };
+  const open = Boolean(anchorEl);
+
+  const { control, watch } = useForm<FormValues>({
+    defaultValues: {
+      fechaInicio: dayjs(),
+      search: null
     }
+  });
+
+  const handleSelectForDeletion = (asignacionId: string) => {
+    setAsignacionesToDelete(prev =>
+      prev.includes(asignacionId)
+        ? prev.filter(id => id !== asignacionId)
+        : [...prev, asignacionId]
+    );
   };
 
-  useEffect(() => {
-    getDrivers();
-  }, []);
-
-  const tableHeader: string[] = ['NOMBRE', 'CI', 'TELÉFONO', 'CORREO', 'DESCRIPCIÓN VEHÍCULO', 'N° MATRÍCULA', 'MODIFICAR'];
-
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => {
-    setOpen(false);
-    setSelectedDriver('');
-    setVehicleName('');
-    setLicensePlate('');
-  };
-
-  const handleCloseSnackbar = () => {
-    setSnackbar(prev => ({ ...prev, open: false }));
-  };
-
-  const handleSubmit = async () => {
-    if (!selectedDriver || !vehicleName || !licensePlate) return;
-
-    setLoading(true);
+  const handleDeleteSelected = async () => {
+    if (asignacionesToDelete.length === 0) return;
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL_BACK}user/update-driver/${selectedDriver}`, {
-        method: 'PUT',
+      setLoading(true);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL_BACK}rutas/asignaciones`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          vehiculo: vehicleName,
-          matricula: licensePlate
-        }),
+        body: JSON.stringify({ ids: asignacionesToDelete }),
       });
 
-      if (response.ok) {
-        setSnackbar({
-          open: true,
-          message: 'Conductor actualizado correctamente',
-          severity: 'success',
-        });
-        getDrivers();
-        handleClose();
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al actualizar el conductor');
-      }
-    } catch (error) {
+      if (!response.ok) throw new Error('Error al eliminar asignaciones');
+
       setSnackbar({
         open: true,
-        message: error instanceof Error ? error.message : 'Error al actualizar el conductor',
+        message: `${asignacionesToDelete.length} asignación(es) eliminada(s) correctamente`,
+        severity: 'success',
+      });
+
+      // Actualizar la lista después de eliminar
+      await getAsignaciones();
+
+      setAsignacionesToDelete([]);
+    } catch (error) {
+      console.error('Error al eliminar:', error);
+      setSnackbar({
+        open: true,
+        message: 'Error al eliminar asignaciones',
         severity: 'error',
       });
     } finally {
@@ -110,228 +157,711 @@ export default function Page(): React.JSX.Element {
     }
   };
 
-  const generatePDF = (driverData: any) => {
-    const doc = new jsPDF();
+  const fechaInicio = watch('fechaInicio');
+  const search = watch('search');
 
-    doc.setFontSize(18);
-    doc.text('Información del Conductor', 14, 20);
+  // Manejar cambio de página
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
 
-    doc.setFontSize(12);
-    doc.text(`Nombre: ${driverData.nombre}`, 14, 30);
-    doc.text(`CI: ${driverData.ci}`, 14, 38);
-    doc.text(`Teléfono: ${driverData.telefono}`, 14, 46);
-    doc.text(`Email: ${driverData.email}`, 14, 54);
-    doc.text(`Vehículo: ${driverData.vehiculo || 'Sin dato'}`, 14, 62);
-    doc.text(`Matrícula: ${driverData.matricula || 'Sin dato'}`, 14, 70);
+  // Manejar cambio de filas por página
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
-    // Añadir mes seleccionado al PDF
-    if (selectedMonth) {
-      const monthName = selectedMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
-      doc.text(`Reporte del mes: ${monthName}`, 14, 78);
+  // Manejar búsqueda
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+    setPage(0); // Resetear a primera página al buscar
+  };
+
+  // Limpiar búsqueda
+  const clearSearch = () => {
+    setSearchTerm('');
+    setPage(0);
+  };
+
+
+  // Obtener conductores
+  const getDrivers = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL_BACK}user/drivers`);
+      const data = await response.json();
+      const enabledDrivers = data.filter((driver: Driver) => !driver.deleted);
+      setDrivers(enabledDrivers);
+    } catch (error) {
+      console.error('Error al obtener conductores:', error);
+    }
+  };
+
+  // Obtener rutas
+  const getRutas = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL_BACK}rutas`);
+      const data = await response.json();
+      setRutas(data);
+    } catch (error) {
+      console.error('Error al obtener rutas:', error);
+    }
+  };
+
+  // Obtener asignaciones
+  const getAsignaciones = async () => {
+    if (!fechaInicio) return;
+    setLoading(true);
+    setSelectedAsignaciones([]); // Limpiar selecciones al hacer nueva consulta
+    try {
+      const fecha = fechaInicio.startOf('month').format('YYYY-MM-DD');
+      const conductorId: string | undefined = search?._id;
+      let url = `${process.env.NEXT_PUBLIC_API_URL_BACK}rutas/asignacion?fecha=${fecha}`;
+
+      if (conductorId) {
+        url += `&conductorId=${conductorId}`;
+      }
+
+      const response = await fetch(url);
+      const data = await response.json();
+      setAsignaciones(data);
+      setFilteredAsignaciones(data); // Inicialmente mostrar todas
+    } catch (error) {
+      console.error('Error al obtener asignaciones:', error);
+      setSnackbar({ open: true, message: 'Error al consultar asignaciones', severity: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Aplicar filtros
+  useEffect(() => {
+    let result = [...asignaciones];
+
+    // Filtrar por término de búsqueda
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(item =>
+      (item.conductorId?.nombre?.toLowerCase().includes(term) ||
+        item.rutaId?.nombre?.toLowerCase().includes(term) ||
+        dayjs(item.fecha).format('YYYY-MM-DD').includes(term))
+      );
     }
 
-    autoTable(doc, {
-      startY: selectedMonth ? 88 : 80,
-      head: [['Campo', 'Valor']],
-      body: [
-        ['Nombre', driverData.nombre],
-        ['CI', driverData.ci],
-        ['Teléfono', driverData.telefono],
-        ['Email', driverData.email],
-        ['Vehículo', driverData.vehiculo || 'Sin dato'],
-        ['Matrícula', driverData.matricula || 'Sin dato']
-      ],
-      styles: {
-        halign: 'left',
-        cellPadding: 5,
-      },
-      headStyles: {
-        fillColor: [41, 128, 185],
-        textColor: 255,
-        fontStyle: 'bold'
+    // Filtrar por ruta
+    if (rutaFilter) {
+      result = result.filter((item: any) => item.rutaId?._id === rutaFilter);
+    }
+
+    setFilteredAsignaciones(result);
+    setPage(0); // Resetear a primera página al aplicar filtros
+  }, [asignaciones, searchTerm, rutaFilter]);
+
+
+  useEffect(() => {
+    getDrivers();
+    getRutas();
+  }, []);
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
+
+  // Calcular asignaciones visibles
+  const visibleAsignaciones = filteredAsignaciones.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
+  const handleUpdateAsignacion = async () => {
+    if (!asignacionEdit || !asignacionEdit.conductorId) return;
+
+    try {
+      setEditLoading(true);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL_BACK}rutas/asignacion/${asignacionEdit._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(
+          asignacionEdit
+        ),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.log(data)
+        throw new Error(data.message || 'Error al actualizar la asignación');
+      }
+
+      setSnackbar({
+        open: true,
+        message: data.message || 'Asignación actualizada correctamente',
+        severity: 'success'
+      });
+
+      handleCloseModal();
+      await getAsignaciones();
+    } catch (error: any) {
+      setSnackbar({
+        open: true,
+        message: error.message || 'Error al actualizar la asignación',
+        severity: 'error'
+      });
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+ const generateReport = async (month: Dayjs, rutaId: string | null) => {
+  try {
+    setLoading(true);
+
+    const monthFormatted = month.format('YYYY-MM');
+    let url = `${process.env.NEXT_PUBLIC_API_URL_BACK}rutas/lineas?month=${monthFormatted}`;
+    if (rutaId) url += `&lineaId=${rutaId}`;
+
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Error al obtener datos del reporte');
+
+    const data = await response.json();
+    if (!data?.asignaciones?.length) {
+      setSnackbar({
+        open: true,
+        message: 'No hay datos para el reporte',
+        severity: 'error'
+      });
+      return;
+    }
+
+    // Crear PDF en modo vertical (portrait)
+    const doc = new jsPDF('p', 'mm', 'a4');
+
+    // Título simple
+    doc.setFontSize(16);
+    doc.setTextColor(0, 0, 0); // Negro simple
+    doc.setFont('helvetica', 'bold');
+    doc.text('REPORTE MENSUAL DE ASIGNACIONES', 105, 20, { align: 'center' });
+
+    // Subtítulo
+    doc.setFontSize(12);
+    doc.text(`Periodo: ${month.format('MMMM YYYY')}`, 105, 28, { align: 'center' });
+
+    // Info de línea si aplica
+    if (rutaId && data.linea) {
+      doc.setFontSize(10);
+      doc.text(`Línea asignada: ${data.linea.nombre}`, 105, 35, { align: 'center' });
+    }
+
+    // Procesar datos para la tabla
+    const daysInMonth = month.daysInMonth();
+    const assignmentsByDay: Record<string, string[]> = {};
+
+    Array.from({length: daysInMonth}, (_, i) => i + 1).forEach(day => {
+      assignmentsByDay[day] = [];
+    });
+
+    data.asignaciones.forEach((item: any) => {
+      const day = dayjs(item.fecha).date();
+      if (assignmentsByDay[day]) {
+        assignmentsByDay[day].push(item.conductorId?.nombre || 'Sin asignar');
       }
     });
 
-    const pdfUrl = doc.output('bloburl');
-    window.open(pdfUrl, '_blank');
-  };
+    // Preparar datos para tabla compacta
+    const tableData = [];
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = month.date(day);
+      const dayName = date.format('ddd').toUpperCase();
+      const dateStr = date.format('DD/MM');
 
-  const handleOpenPdfModal = () => setPdfModalOpen(true);
-  const handleClosePdfModal = () => {
-    setPdfModalOpen(false);
-    setSelectedDriverForPdf('');
-    setSelectedMonth(null);
-  };
-
-  const handleGeneratePdfWithParams = () => {
-    if (!selectedDriverForPdf || !selectedMonth) return;
-
-    const driverData = drivers.find((driver: any) => driver._id === selectedDriverForPdf);
-    if (driverData) {
-      generatePDF(driverData);
-      handleClosePdfModal();
+      tableData.push([
+        { content: day.toString(), styles: { fontStyle: 'bold', halign: 'center' } },
+        `${dayName} ${dateStr}`,
+        assignmentsByDay[day].join('\n') || '--'
+      ]);
     }
-  };
+
+    // Generar tabla compacta
+    autoTable(doc, {
+      startY: 40,
+      head: [
+        [
+          { content: 'DÍA', styles: { fillColor: [100, 100, 100], textColor: 255 } },
+          { content: 'FECHA', styles: { fillColor: [100, 100, 100], textColor: 255 } },
+          { content: 'CONDUCTORES', styles: { fillColor: [100, 100, 100], textColor: 255 } }
+        ]
+      ],
+      body: tableData,
+      columnStyles: {
+        0: { cellWidth: 15, halign: 'center' },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 'auto', cellPadding: 2 }
+      },
+      styles: {
+        fontSize: 8,
+        cellPadding: 1,
+        lineColor: [200, 200, 200],
+        lineWidth: 0.1,
+        overflow: 'linebreak'
+      },
+      margin: { left: 20, right: 20 },
+      tableWidth: 'wrap',
+      pageBreak: 'avoid'
+    });
+
+    // Pie de página simple
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.text(`Generado el: ${dayjs().format('DD/MM/YYYY HH:mm')}`, 20, 285);
+    doc.text('Sistema de Gestión de Transporte', 190, 285, { align: 'right' });
+
+    // Mostrar en nueva pestaña
+    const pdfOutput = doc.output('bloburl');
+    window.open(pdfOutput, '_blank');
+
+  } catch (error) {
+    console.error('Error al generar reporte:', error);
+    setSnackbar({
+      open: true,
+      message: 'Error al generar el reporte',
+      severity: 'error'
+    });
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: '1.6rem' }}>
-        <Card sx={{ p: 2 }}>
-          <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h4">Conductor - Vehiculo</Typography>
-            <Box display="flex" gap={2}>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={handleOpen}
-              >
-                Actualizar
-              </Button>
-            </Box>
-            <IconButton
-              color="secondary"
-              onClick={handleOpenPdfModal}
-              aria-label="generar pdf"
-            >
-              <PictureAsPdfIcon />
-            </IconButton>
-          </CardContent>
-        </Card>
 
-        <TableDriver
-          count={drivers.length}
-          page={0}
-          headerTable={tableHeader}
-          rows={drivers}
-          rowsPerPage={5}
-          getDrivers={getDrivers}
-        />
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <Box p={3}>
+        <Typography variant="h5" gutterBottom>
+          Lista de Asignaciones
+        </Typography>
 
-        <Modal
-          open={open}
-          onClose={handleClose}
-          aria-labelledby="modal-modal-title"
-          aria-describedby="modal-modal-description"
-        >
-          <Box sx={modalStyle}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-              <Typography variant="h5">Asignar Vehículo a Conductor</Typography>
-              <IconButton onClick={handleClose}>
-                <CloseIcon />
-              </IconButton>
-            </Box>
-
-            <Stack spacing={3}>
-              <TextField
-                select
-                value={selectedDriver}
-                onChange={(e) => setSelectedDriver(e.target.value)}
-                label="Seleccionar conductor"
-                fullWidth
-                size="small"
-              >
-                <MenuItem value="" disabled>
-                  Seleccione un conductor
-                </MenuItem>
-                {drivers.map((driver: any) => (
-                  <MenuItem key={driver._id} value={driver._id}>
-                    {driver.nombre} - {driver.ci}
-                  </MenuItem>
-                ))}
-              </TextField>
-
-              <TextField
-                select
-                fullWidth
-                label="Tipo de vehículo"
-                value={vehicleName}
-                onChange={(e) => setVehicleName(e.target.value)}
-                size="small"
-              >
-                <MenuItem value="MiniBus">MiniBus</MenuItem>
-                <MenuItem value="MicroBus">MicroBus</MenuItem>
-              </TextField>
-
-              <TextField
-                fullWidth
-                label="N° Matrícula"
-                value={licensePlate}
-                onChange={(e) => setLicensePlate(e.target.value)}
-                size="small"
-              />
-
-              <Button
-                variant="contained"
-                onClick={handleSubmit}
-                disabled={!selectedDriver || !vehicleName || !licensePlate || loading}
-              >
-                {loading ? 'Guardando...' : 'Guardar'}
-              </Button>
-            </Stack>
-          </Box>
-        </Modal>
-
-        {/* Modal para generación de PDF */}
-        <Modal
-          open={pdfModalOpen}
-          onClose={handleClosePdfModal}
-          aria-labelledby="pdf-modal-title"
-          aria-describedby="pdf-modal-description"
-        >
-          <Box sx={modalStyle}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-              <Typography variant="h5">Generar Reporte PDF</Typography>
-              <IconButton onClick={handleClosePdfModal}>
-                <CloseIcon />
-              </IconButton>
-            </Box>
-
-            <Stack spacing={3}>
-              <TextField
-                select
-                value={selectedDriverForPdf}
-                onChange={(e) => setSelectedDriverForPdf(e.target.value)}
-                label="Seleccionar conductor"
-                fullWidth
-                size="small"
-              >
-                <MenuItem value="" disabled>
-                  Seleccione un conductor
-                </MenuItem>
-                {drivers.map((driver: any) => (
-                  <MenuItem key={driver._id} value={driver._id}>
-                    {driver.nombre} - {driver.ci}
-                  </MenuItem>
-                ))}
-              </TextField>
-
+        {/* Filtros principales */}
+        <Box display="flex" flexWrap="wrap" alignItems="center" gap={2} mb={3}>
+          <Controller
+            name="fechaInicio"
+            control={control}
+            render={({ field }) => (
               <DatePicker
                 label="Mes"
-                value={selectedMonth}
-                onChange={(newValue) => setSelectedMonth(newValue)}
+                {...field}
+                value={field.value}
+                onChange={field.onChange}
                 views={['year', 'month']}
                 openTo="month"
-                slotProps={{
-                  textField: {
-                    size: 'small',
-                    variant: 'outlined',
-                    fullWidth: true
-                  }
-                }}
+                slotProps={{ textField: { size: 'small', variant: 'outlined' } }}
                 disabled={loading}
               />
+            )}
+          />
 
+          <Controller
+            name="search"
+            control={control}
+            render={({ field }) => (
+              <Autocomplete
+                options={drivers}
+                getOptionLabel={(option: Driver) => option.nombre || ''}
+                value={field.value}
+                onChange={(_, data) => field.onChange(data)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Filtrar por conductor"
+                    size="small"
+                    variant="outlined"
+                    placeholder="Seleccione conductor"
+                  />
+                )}
+                sx={{ minWidth: 200 }}
+                disabled={loading}
+              />
+            )}
+          />
+
+          <Button variant="contained" color="primary" onClick={getAsignaciones}>
+            {loading ? 'Consultando...' : 'Consultar'}
+          </Button>
+
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => setOpenReportModal(true)}
+          >
+            Generar Reporte
+          </Button>
+
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleDeleteSelected}
+            disabled={asignacionesToDelete.length === 0 || loading}
+            startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <DeleteIcon />}
+            sx={{
+              ml: 2,
+              minWidth: 120,
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                transform: asignacionesToDelete.length > 0 ? 'scale(1.03)' : 'none',
+                boxShadow: asignacionesToDelete.length > 0 ? '0 4px 8px rgba(0,0,0,0.2)' : 'none',
+              },
+              '&.Mui-disabled': {
+                backgroundColor: 'rgba(211, 47, 47, 0.1)',
+                color: 'rgba(0, 0, 0, 0.26)',
+              }
+            }}
+          >
+            {loading ? (
+              'Eliminando...'
+            ) : (
+              <>
+                Eliminar
+                {asignacionesToDelete.length > 0 && (
+                  <Box
+                    component="span"
+                    sx={{
+                      ml: 1,
+                      backgroundColor: 'rgba(255,255,255,0.2)',
+                      borderRadius: '50%',
+                      width: 24,
+                      height: 24,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {asignacionesToDelete.length}
+                  </Box>
+                )}
+              </>
+            )}
+          </Button>
+        </Box>
+
+        {/* Barra de búsqueda y exportación */}
+        <Box display="flex" justifyContent="space-between" mb={2}>
+          <TextField
+            size="small"
+            variant="outlined"
+            placeholder="Buscar..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+              endAdornment: searchTerm && (
+                <InputAdornment position="end">
+                  <IconButton onClick={clearSearch} size="small">
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+            sx={{ width: '400px' }}
+          />
+
+          <Autocomplete
+            options={rutas}
+            getOptionLabel={(option: Ruta) => option.nombre || ''}
+            value={rutas.find(r => r._id === rutaFilter) || null}
+            onChange={(_, newValue) => setRutaFilter(newValue?._id || null)}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Filtrar por línea"
+                size="small"
+                variant="outlined"
+                placeholder="Seleccione línea"
+              />
+            )}
+            sx={{ minWidth: 300 }}
+            disabled={loading}
+          />
+
+
+
+        </Box>
+
+        {/* Tabla de asignaciones */}
+        <TableContainer component={Paper}>
+          {filteredAsignaciones.length > 0 ? (
+            <>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell padding="checkbox">
+                      <Checkbox
+                        color="primary"
+                        indeterminate={
+                          asignacionesToDelete.length > 0 &&
+                          asignacionesToDelete.length < filteredAsignaciones.length
+                        }
+                        checked={
+                          filteredAsignaciones.length > 0 &&
+                          asignacionesToDelete.length === filteredAsignaciones.length
+                        }
+                        onChange={() => {
+                          if (asignacionesToDelete.length === filteredAsignaciones.length) {
+                            setAsignacionesToDelete([]);
+                          } else {
+                            setAsignacionesToDelete(filteredAsignaciones.map(a => a._id));
+                          }
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell><strong>Conductor</strong></TableCell>
+                    <TableCell><strong>Línea</strong></TableCell>
+                    <TableCell><strong>Fecha</strong></TableCell>
+                    <TableCell><strong>Acciones</strong></TableCell>
+
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {visibleAsignaciones.map((item: Asignacion) => (
+                    <TableRow key={item._id}>
+                      <TableCell padding="checkbox">
+                        <Checkbox
+                          color="primary"
+                          checked={asignacionesToDelete.includes(item._id)}
+                          onChange={() => handleSelectForDeletion(item._id)}
+                        />
+                      </TableCell>
+                      <TableCell>{item.conductorId?.nombre || '-'}</TableCell>
+                      <TableCell>{item.rutaId?.nombre || '-'}</TableCell>
+                      <TableCell>{dayjs(item.fecha).format('YYYY-MM-DD')}</TableCell>
+                      <TableCell>
+                        <Button
+                          variant="contained"
+                          color="secondary"
+                          onClick={() => handleOpenEditModal(item)}
+                          disabled={dayjs(item.fecha).isBefore(dayjs(), 'day')}
+                          startIcon={<EditIcon />}
+                          sx={{
+                            ml: 1,
+                            textTransform: 'none',
+                            minWidth: '120px',
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                              transform: 'translateY(-1px)',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                            },
+                            '&.Mui-disabled': {
+                              backgroundColor: 'rgba(0, 0, 0, 0.12)',
+                              color: 'rgba(0, 0, 0, 0.26)',
+                            }
+                          }}
+                        >
+                          Reasignar
+                        </Button>
+                      </TableCell>
+
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <TablePagination
+                rowsPerPageOptions={[5, 10, 25]}
+                component="div"
+                count={filteredAsignaciones.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                labelRowsPerPage="Filas por página:"
+                labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+              />
+            </>
+          ) : (
+            <Typography p={3} color="text.secondary">
+              {asignaciones.length === 0
+                ? 'No hay asignaciones registradas para el mes seleccionado.'
+                : 'No se encontraron resultados con los filtros aplicados.'}
+            </Typography>
+          )}
+        </TableContainer>
+
+
+
+        {/* Modal para generar reporte */}
+        <Modal
+          open={openReportModal}
+          onClose={() => setOpenReportModal(false)}
+          aria-labelledby="modal-generar-reporte"
+        >
+          <Box sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 400,
+            bgcolor: 'background.paper',
+            boxShadow: 24,
+            p: 4,
+            borderRadius: 2,
+          }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+              <Typography variant="h6" component="h2">
+                Configurar Reporte
+              </Typography>
+              <IconButton onClick={() => setOpenReportModal(false)}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
+
+            <Box mb={3}>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  label="Mes del reporte"
+                  value={reportMonth}
+                  onChange={(newValue) => newValue && setReportMonth(newValue)}
+                  views={['year', 'month']}
+                  openTo="month"
+                  slotProps={{
+                    textField: { fullWidth: true }
+                  }}
+                />
+              </LocalizationProvider>
+            </Box>
+
+            <Box mb={3}>
+              <Autocomplete
+                options={rutas}
+                getOptionLabel={(option: Ruta) => option.nombre}
+                value={rutas.find(r => r._id === selectedRutaForReport) || null}
+                onChange={(_, newValue) => setSelectedRutaForReport(newValue?._id || null)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Filtrar por línea (opcional)"
+                    fullWidth
+                  />
+                )}
+              />
+            </Box>
+
+            <Box display="flex" justifyContent="flex-end" gap={2} mt={3}>
+              <Button
+                variant="outlined"
+                onClick={() => setOpenReportModal(false)}
+              >
+                Cancelar
+              </Button>
               <Button
                 variant="contained"
-                onClick={handleGeneratePdfWithParams}
-                disabled={!selectedDriverForPdf || !selectedMonth}
-                startIcon={<PictureAsPdfIcon />}
+                color="primary"
+                onClick={() => {
+                  // Lógica para generar el reporte con los filtros seleccionados
+                  generateReport(reportMonth, selectedRutaForReport);
+                  setOpenReportModal(false);
+                }}
               >
-                Generar PDF
+                Generar
               </Button>
-            </Stack>
+            </Box>
           </Box>
         </Modal>
+
+
+
+        <Modal
+          open={openModal}
+          onClose={handleCloseModal}
+          aria-labelledby="modal-editar-asignacion"
+          aria-describedby="modal-para-editar-asignacion"
+        >
+          <Box sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 500,
+            bgcolor: 'background.paper',
+            boxShadow: 24,
+            p: 4,
+            borderRadius: 2,
+          }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+              <Typography variant="h6" component="h2">
+                Reasignar conductor
+              </Typography>
+              <IconButton onClick={handleCloseModal}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
+
+            {asignacionEdit && (
+              <>
+                {/* Campo para seleccionar línea */}
+                <Box mb={2}>
+                  <Autocomplete
+                    options={rutas}
+                    getOptionLabel={(option: any) => option.nombre}
+                    value={rutas.find((l: any) => l._id === asignacionEdit.rutaId?._id) || null}
+                    onChange={(_, newValue) => {
+                      setAsignacionEdit((prev) => ({
+                        ...prev!,
+                        rutaId: newValue ? { _id: newValue._id, nombre: newValue.nombre } : undefined
+                      }));
+                    }}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Seleccionar línea" fullWidth />
+                    )}
+                  />
+                </Box>
+
+                {/* Campo para seleccionar nuevo conductor */}
+                <Autocomplete
+                  options={drivers}
+                  getOptionLabel={(option: Driver) => option.nombre}
+                  value={drivers.find((d: any) => d._id === asignacionEdit.conductorId?._id) || null}
+                 disabled={true}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Seleccionar conductor"
+                      variant="outlined"
+                      fullWidth
+                    />
+                  )}
+                />
+
+                {/* Botones de acción */}
+                <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
+                  <Button variant="outlined" onClick={handleCloseModal} disabled={editLoading}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={editLoading ? <CircularProgress size={20} /> : <SaveIcon />}
+                    onClick={handleUpdateAsignacion}
+                    disabled={editLoading || !asignacionEdit?.conductorId}
+                    sx={{
+                      minWidth: '150px',
+                      '& .MuiButton-startIcon': {
+                        marginRight: '8px'
+                      }
+                    }}
+                  >
+                    {editLoading ? 'Guardando...' : 'Guardar cambios'}
+                  </Button>
+                </Box>
+              </>
+            )}
+          </Box>
+        </Modal>
+
+
+
 
         <Snackbar
           open={snackbar.open}

@@ -2,13 +2,14 @@
 import { z } from 'zod';
 
 export const driverSchema = z.object({
-  vehiculo: z.string()
-    .nonempty("Debe seleccionar un tipo de vehículo"),
-
+  vehiculo: z.string().min(1, 'El tipo de vehículo es requerido'),
   matricula: z.string()
-    .min(4, "La matrícula debe tener al menos 4 caracteres")
-    .max(10, "La matrícula no puede exceder los 10 caracteres")
-    .regex(/^[A-Za-z0-9-]+$/, "La matrícula solo puede contener letras, números y guiones")
+    .min(1, 'La matrícula es requerida')
+    .regex(
+      /^[A-Za-z0-9]{3,4}-[A-Za-z]{2,3}$|^[A-Za-z]{2,3}-[A-Za-z0-9]{3,4}$/,
+      'La matrícula debe tener un formato válido (ej: 1234-ABC o ABC-123)'
+    )
+    .transform(val => val.toUpperCase()), // Convertir a mayúsculas
 });
 
 
