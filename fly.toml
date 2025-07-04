@@ -4,6 +4,11 @@ primary_region = "gru"
 [build]
   dockerfile = "dockerfile"
 
+  [build.args]
+    NEXT_PUBLIC_API_URL_BACK = "https://deploy-backend-geolocalizacion.fly.dev/api/"
+    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = "AIzaSyCZ0ckvUNzgTpZZTroLk8YFCgb2vj4iVVk"
+    NEXT_PUBLIC_WEB_SOCKET_URL_CLOUD = "https://deploy-backend-geolocalizacion.fly.dev/"
+
 [[services]]
   internal_port = 3000
   protocol = "tcp"

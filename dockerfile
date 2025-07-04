@@ -7,6 +7,16 @@ COPY package*.json ./
 RUN npm install --force
 COPY . .
 
+# Definir variables de entorno como argumentos de build
+ARG NEXT_PUBLIC_API_URL_BACK
+ARG NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+ARG NEXT_PUBLIC_WEB_SOCKET_URL_CLOUD
+
+# Pasar argumentos a variables de entorno disponibles en build time
+ENV NEXT_PUBLIC_API_URL_BACK=$NEXT_PUBLIC_API_URL_BACK
+ENV NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+ENV NEXT_PUBLIC_WEB_SOCKET_URL_CLOUD=$NEXT_PUBLIC_WEB_SOCKET_URL_CLOUD
+
 RUN npm run build
 
 # Etapa de producción
