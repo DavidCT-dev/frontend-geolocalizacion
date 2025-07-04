@@ -24,6 +24,3 @@ yarn-error.log*
 .idea
 .vscode
 
-# Dockerfiles duplicados si no usas ambos
-dockerfile
-Dockerfile
