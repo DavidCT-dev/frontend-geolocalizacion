@@ -22,6 +22,7 @@ export const authClient = {
   async signInWithPassword(credentials: { email: string; password: string }): Promise<AuthResponse> {
     try {
       // Aquí iría tu llamada real al API
+      console.log(`${process.env.NEXT_PUBLIC_API_URL_BACK}auth/login`)
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL_BACK}auth/login`, {
         method: 'POST',
         headers: {
