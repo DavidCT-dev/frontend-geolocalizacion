@@ -7,9 +7,6 @@ COPY package*.json ./
 RUN npm install --force
 COPY . .
 
-# Copiamos las variables de entorno
-COPY .env.production .env
-
 RUN npm run build
 
 # Etapa de producción
