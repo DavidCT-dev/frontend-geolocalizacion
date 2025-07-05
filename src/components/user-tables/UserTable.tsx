@@ -107,7 +107,7 @@ export default function UserTable({
     // Opcional: muestra mensaje y refresca lista
     setSnackbar({
       open: true,
-      message: 'Usuario creado exitosamente',
+      message: `Usuario creado exitosamente, por favor verifique su email ${userData.email}`,
       severity: 'success',
     });
     refreshData?.(); // Refrescar la tabla o lista de usuarios si existe

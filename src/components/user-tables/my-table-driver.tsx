@@ -79,24 +79,18 @@ export default function TableDriver({
   });
 
 
-  const [editUserData, setEditUserData] = React.useState({
+  const {
+  control,
+  handleSubmit,
+  formState: { errors, isSubmitting },
+  reset,
+} = useForm({
+  resolver: zodResolver(driverSchema),
+  defaultValues: {
     vehiculo: '',
     matricula: ''
-  });
-
-  const {
-    control,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    reset,
-    setValue
-  } = useForm({
-    resolver: zodResolver(driverSchema),
-    defaultValues: {
-      vehiculo: editUserData.vehiculo || '',
-      matricula: editUserData.matricula || ''
-    }
-  });
+  }
+});
 
   const rowIds = React.useMemo(() => {
     return rows.map((user) => user.id);
@@ -130,11 +124,13 @@ export default function TableDriver({
   };
 
   const handleEdit = (userId: string, rowData: any) => {
-    setCurrentUserId(userId);
-    setEditUserData({
-      vehiculo: rowData.vehiculo || '',
-      matricula: rowData.matricula || ''
-    });
+     setCurrentUserId(userId);
+  setEditModalOpen(true);
+
+     reset({
+    vehiculo: rowData.vehiculo || '',
+    matricula: rowData.matricula || ''
+  });
     setEditModalOpen(true);
   };
 
@@ -229,47 +225,6 @@ export default function TableDriver({
     { value: 'MicroBus', label: 'MicroBus' }
   ];
 
-  //   const generatePDF = (driverData: Driver) => {
-  //   const doc = new jsPDF();
-
-  //   doc.setFontSize(18);
-  //   doc.text('Información del Conductor', 14, 20);
-
-  //   doc.setFontSize(12);
-  //   doc.text(`Nombre: ${driverData.nombre}`, 14, 30);
-  //   doc.text(`CI: ${driverData.ci}`, 14, 38);
-  //   doc.text(`Teléfono: ${driverData.telefono}`, 14, 46);
-  //   doc.text(`Email: ${driverData.email}`, 14, 54);
-  //   doc.text(`Vehículo: ${driverData.vehiculo || 'Sin dato'}`, 14, 62);
-  //   doc.text(`Matrícula: ${driverData.matricula || 'Sin dato'}`, 14, 70);
-
-  //   autoTable(doc, {
-  //     startY: 80,
-  //     head: [['Campo', 'Valor']],
-  //     body: [
-  //       ['Nombre', driverData.nombre],
-  //       ['CI', driverData.ci],
-  //       ['Teléfono', driverData.telefono],
-  //       ['Email', driverData.email],
-  //       ['Vehículo', driverData.vehiculo || 'Sin dato'],
-  //       ['Matrícula', driverData.matricula || 'Sin dato']
-  //     ],
-  //     styles: {
-  //       halign: 'left',
-  //       cellPadding: 5,
-  //     },
-  //     headStyles: {
-  //       fillColor: [41, 128, 185],
-  //       textColor: 255,
-  //       fontStyle: 'bold'
-  //     }
-  //   });
-
-  //   // 👇 Abrir en una nueva pestaña del navegador
-  //   const pdfUrl = doc.output('bloburl');
-  //   window.open(pdfUrl, '_blank');
-  // };
-
   return (
     <Card>
       <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -356,13 +311,7 @@ export default function TableDriver({
                           <DeleteIcon />
                         </IconButton> : null}
 
-                      {/* <IconButton
-                        color="secondary"
-                        onClick={() => generatePDF(row as Driver)}
-                        aria-label="generar pdf"
-                      >
-                        <PictureAsPdfIcon />
-                      </IconButton> */}
+
                     </Stack>
                   </TableCell>
                 </TableRow>

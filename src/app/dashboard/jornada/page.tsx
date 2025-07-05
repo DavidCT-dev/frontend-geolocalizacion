@@ -10,6 +10,8 @@ import {
   Grid,
   CardContent,
   CircularProgress,
+  Snackbar,
+  Alert as MuiAlert,
   Alert
 } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
@@ -36,8 +38,6 @@ interface Ruta {
   paradas: Parada[];
 }
 
-
-
 const Map = dynamic(() => import('../../../components/maps/mapJornada'), {
   ssr: false,
   loading: () => (
@@ -51,24 +51,30 @@ export default function JornadaPage(): JSX.Element {
   const { user } = useUser();
   const [linea, setLinea] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success' as 'success' | 'error' | 'info' | 'warning'
+  });
   const [socket, setSocket] = useState<Socket | null>(null);
   const [jornadaStatus, setJornadaStatus] = useState<'inactiva' | 'activa' | 'pausada'>('inactiva');
   const [ubicacionActual, setUbicacionActual] = useState<Punto | null>(null);
   const [mapCenter, setMapCenter] = useState<any>(null);
   const watchIdRef = useRef<number | null>(null);
-  const lastLocationRef = useRef<Punto | null>(null);
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
+
   // Conexión con Socket.IO
   useEffect(() => {
-// const socketInstance = io('wss://backend-gps-geolocalizacion-dark-thunder-4226.fly.dev', {
-//   transports: ['websocket'],
-// });
+    const socketInstance = io(process.env.NEXT_PUBLIC_WEB_SOCKET_URL_CLOUD || 'http://localhost:5000', {
+      transports: ['websocket'],
+    });
 
-const socketInstance = io(process.env.NEXT_PUBLIC_WEB_SOCKET_URL_CLOUD || 'http://localhost:5000', {
-  transports: ['websocket'],
-});
     const onUbicacion = (data: any) => {
       const nuevaUbicacion = { latitud: data.latitud, longitud: data.longitud };
+      console.log(nuevaUbicacion)
       setUbicacionActual(nuevaUbicacion);
       setMapCenter(nuevaUbicacion);
     };
@@ -81,6 +87,7 @@ const socketInstance = io(process.env.NEXT_PUBLIC_WEB_SOCKET_URL_CLOUD || 'http:
     socketInstance.on('disconnect', () => {
       console.log('Socket.IO desconectado');
       setSocket(null);
+
     });
 
     socketInstance.on('ubicacion_actual', onUbicacion);
@@ -94,15 +101,32 @@ const socketInstance = io(process.env.NEXT_PUBLIC_WEB_SOCKET_URL_CLOUD || 'http:
     };
   }, []);
 
-
   const handleStartJornada = () => {
-    if (!socket?.connected) { setError('No hay conexión en tiempo real disponible'); return; }
-    if (!linea) { setError('No hay ruta asignada'); return; }
-    if (!navigator.geolocation) { setError('Geolocalización no soportada'); return; }
+    if (!socket?.connected) {
+      setSnackbar({
+        open: true,
+        message: 'No hay conexión en tiempo real disponible',
+        severity: 'error'
+      });
+      return;
+    }
+    if (!linea) {
+      setSnackbar({
+        open: true,
+        message: 'No hay ruta asignada',
+        severity: 'error'
+      });
+      return;
+    }
+    if (!navigator.geolocation) {
+      setSnackbar({
+        open: true,
+        message: 'Geolocalización no soportada por tu navegador',
+        severity: 'error'
+      });
+      return;
+    }
 
-    // if (jornadaStatus == 'inactiva'){
-    //   alert('La jornada a terminado!!!')
-    // }
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const estadoActual = 'activa';
@@ -113,9 +137,8 @@ const socketInstance = io(process.env.NEXT_PUBLIC_WEB_SOCKET_URL_CLOUD || 'http:
           longitud: position.coords.longitude,
         };
 
-        // Enviar ubicación inicial
         socket.emit('ubicacion', {
-          conductorId: user?._id, // Asegúrate de tener el ID del conductor
+          conductorId: user?._id,
           lineaId: linea.rutaId._id,
           salaId: `linea_${linea.rutaId._id}`,
           timestamp: new Date().toISOString(),
@@ -127,7 +150,6 @@ const socketInstance = io(process.env.NEXT_PUBLIC_WEB_SOCKET_URL_CLOUD || 'http:
         setUbicacionActual(ubicacion);
         setMapCenter(ubicacion);
 
-        // Activar seguimiento en tiempo real
         const id = navigator.geolocation.watchPosition(
           (pos) => {
             socket.emit('ubicacion', {
@@ -140,15 +162,32 @@ const socketInstance = io(process.env.NEXT_PUBLIC_WEB_SOCKET_URL_CLOUD || 'http:
               estado: estadoActual
             });
           },
-          (err) => { console.error('Error obteniendo ubicación:', err); },
+          (err) => {
+            console.error('Error obteniendo ubicación:', err);
+            setSnackbar({
+              open: true,
+              message: 'Error obteniendo ubicación GPS',
+              severity: 'error'
+            });
+          },
           { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
         );
 
         watchIdRef.current = id;
+
+        setSnackbar({
+          open: true,
+          message: 'Jornada iniciada correctamente',
+          severity: 'success'
+        });
       },
       (err) => {
         console.error('Error al obtener permisos de ubicación:', err);
-        setError('Debes permitir el uso del GPS para iniciar la jornada');
+        setSnackbar({
+          open: true,
+          message: 'Debes permitir el uso del GPS para iniciar la jornada',
+          severity: 'error'
+        });
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
@@ -156,24 +195,24 @@ const socketInstance = io(process.env.NEXT_PUBLIC_WEB_SOCKET_URL_CLOUD || 'http:
 
   const handlePauseJornada = () => {
     if (!socket?.connected) {
-      setError('No hay conexión en tiempo real disponible');
+      setSnackbar({
+        open: true,
+        message: 'No hay conexión en tiempo real disponible',
+        severity: 'error'
+      });
       return;
     }
 
-    // 1. Detener el seguimiento en tiempo real
     if (watchIdRef.current !== null) {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
     }
 
-    // 2. Actualizar el estado local primero para reflejar cambios inmediatos
     setJornadaStatus('pausada');
-    setUbicacionActual(null); // Limpiar ubicación actual inmediatamente
+    setUbicacionActual(null);
 
-    // 3. Obtener y enviar la última ubicación con estado 'pausada'
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        // Crear objeto de ubicación pausada
         const ubicacionPausada = {
           conductorId: user?._id,
           lineaId: linea?.rutaId._id,
@@ -185,13 +224,15 @@ const socketInstance = io(process.env.NEXT_PUBLIC_WEB_SOCKET_URL_CLOUD || 'http:
           message: 'Jornada pausada'
         };
 
-        // Enviar al servidor
         socket.emit('ubicacion', ubicacionPausada);
-
+        setSnackbar({
+          open: true,
+          message: 'Jornada pausada',
+          severity: 'info'
+        });
       },
       (err) => {
         console.error('Error obteniendo ubicación:', err);
-        // Enviar mensaje de pausa sin ubicación
         socket.emit('ubicacion', {
           conductorId: user?._id,
           lineaId: linea?.rutaId._id,
@@ -200,70 +241,76 @@ const socketInstance = io(process.env.NEXT_PUBLIC_WEB_SOCKET_URL_CLOUD || 'http:
           estado: 'pausada',
           message: 'Jornada pausada (sin ubicación)'
         });
+        setSnackbar({
+          open: true,
+          message: 'Jornada pausada (no se pudo obtener la ubicación actual)',
+          severity: 'warning'
+        });
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   };
 
   const handleFinishJornada = () => {
-  if (!socket?.connected) {
-    setError('No hay conexión en tiempo real disponible');
-    return;
-  }
-
-  // 1. Detener el seguimiento de ubicación si está activo
-  if (watchIdRef.current !== null) {
-    navigator.geolocation.clearWatch(watchIdRef.current);
-    watchIdRef.current = null;
-  }
-
-  // 2. Actualizar estado local
-  setJornadaStatus('inactiva');
-  setUbicacionActual(null); // Limpiar ubicación actual inmediatamente
-
-  // 3. Obtener y enviar la última ubicación con estado 'inactiva'
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      const ubicacionFinal = {
-        conductorId: user?._id,
-        lineaId: linea?.rutaId._id,
-        salaId: linea ? `linea_${linea?.rutaId._id}` : undefined,
-        timestamp: new Date().toISOString(),
-        latitud: position.coords.latitude,
-        longitud: position.coords.longitude,
-        estado: 'inactiva',
-      };
-
-      socket.emit('ubicacion', ubicacionFinal);
-    },
-    (err) => {
-      console.error('Error obteniendo ubicación:', err);
-
-      socket.emit('ubicacion', {
-        conductorId: user?._id,
-        lineaId: linea?.rutaId._id,
-        salaId: linea ? `linea_${linea?.rutaId._id}` : undefined,
-        timestamp: new Date().toISOString(),
-        estado: 'inactiva',
+    if (!socket?.connected) {
+      setSnackbar({
+        open: true,
+        message: 'No hay conexión en tiempo real disponible',
+        severity: 'error'
       });
-    },
-    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-  );
-};
+      return;
+    }
 
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+
+    setJornadaStatus('inactiva');
+    setUbicacionActual(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const ubicacionFinal = {
+          conductorId: user?._id,
+          lineaId: linea?.rutaId._id,
+          salaId: linea ? `linea_${linea?.rutaId._id}` : undefined,
+          timestamp: new Date().toISOString(),
+          latitud: position.coords.latitude,
+          longitud: position.coords.longitude,
+          estado: 'inactiva',
+        };
+
+        socket.emit('ubicacion', ubicacionFinal);
+        setSnackbar({
+          open: true,
+          message: 'Jornada finalizada correctamente',
+          severity: 'success'
+        });
+      },
+      (err) => {
+        console.error('Error obteniendo ubicación:', err);
+        socket.emit('ubicacion', {
+          conductorId: user?._id,
+          lineaId: linea?.rutaId._id,
+          salaId: linea ? `linea_${linea?.rutaId._id}` : undefined,
+          timestamp: new Date().toISOString(),
+          estado: 'inactiva',
+        });
+        setSnackbar({
+          open: true,
+          message: 'Jornada finalizada (no se pudo obtener la ubicación final)',
+          severity: 'warning'
+        });
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  };
 
   const getLineaConductor = async () => {
     try {
       setLoading(true);
-      setError(null);
-
       const fechaActual = new Date().toISOString().split('T')[0];
-      // const fechaActual = new Date().toLocaleDateString('en-CA', {
-      //   timeZone: 'America/La_Paz',
-      //   year: 'numeric',
-      //   month: '2-digit',
-      //   day: '2-digit'
-      // }).replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2');
       const conductorId = user?._id;
 
       const response = await fetch(
@@ -275,14 +322,17 @@ const socketInstance = io(process.env.NEXT_PUBLIC_WEB_SOCKET_URL_CLOUD || 'http:
       setLinea(data);
     } catch (err) {
       console.error('Error:', err);
-      setError('Error no tiene linea asignada');
+      setSnackbar({
+        open: true,
+        message: 'No tienes una línea asignada para hoy',
+        severity: 'warning'
+      });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-
     if (user?._id) {
       getLineaConductor();
     }
@@ -294,8 +344,6 @@ const socketInstance = io(process.env.NEXT_PUBLIC_WEB_SOCKET_URL_CLOUD || 'http:
         <Typography variant="h5" gutterBottom>
           Jornada {jornadaStatus !== 'inactiva' && `(Estado: ${jornadaStatus})`}
         </Typography>
-
-        {error ? <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert> : null}
 
         {loading ? (
           <Box display="flex" justifyContent="center" my={4}>
@@ -353,6 +401,17 @@ const socketInstance = io(process.env.NEXT_PUBLIC_WEB_SOCKET_URL_CLOUD || 'http:
             </CardContent>
           </>
         )}
+
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={() => { setSnackbar(prev => ({ ...prev, open: false })); }}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <Alert severity={snackbar.severity} onClose={() => { setSnackbar(prev => ({ ...prev, open: false })); }}>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Box>
     </LocalizationProvider>
   );

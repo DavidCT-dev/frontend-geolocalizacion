@@ -1,7 +1,19 @@
 'use client';
 
 import React, { useState } from "react";
-import { Avatar, Box, Card, CardContent, Stack, Typography, Button, CardActions, Divider } from "@mui/material";
+import {
+  Avatar,
+  Box,
+  Card,
+  CardContent,
+  Stack,
+  Typography,
+  Button,
+  CardActions,
+  Divider,
+  Snackbar,
+  Alert
+} from "@mui/material";
 import { useUser } from "@/hooks/use-user";
 import { logger } from "@/lib/default-logger";
 import Grid from '@mui/material/Unstable_Grid2';
@@ -9,12 +21,15 @@ import { AccountDetailsForm } from "@/components/dashboard/account/account-detai
 import { ChangePasswordForm } from "@/components/profile/change-password-form";
 import styles from "../../../styles/pages/profile.module.css";
 
-
-
 export default function ProfilePage(): React.JSX.Element {
   const { user, checkSession } = useUser();
   const [localAvatar, setLocalAvatar] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success' as 'success' | 'error' | 'info' | 'warning'
+  });
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Función para obtener las iniciales del nombre
@@ -38,12 +53,20 @@ export default function ProfilePage(): React.JSX.Element {
 
     // Validar tipo y tamaño de imagen
     if (!file.type.startsWith('image/')) {
-      alert('Por favor selecciona un archivo de imagen válido');
+      setSnackbar({
+        open: true,
+        message: 'Por favor selecciona un archivo de imagen válido',
+        severity: 'error'
+      });
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) { // 2MB
-      alert('La imagen no debe exceder los 2MB');
+      setSnackbar({
+        open: true,
+        message: 'La imagen no debe exceder los 2MB',
+        severity: 'error'
+      });
       return;
     }
 
@@ -52,7 +75,12 @@ export default function ProfilePage(): React.JSX.Element {
 
       reader.onload = (e) => {
         const base64Image = e.target?.result as string;
-        setLocalAvatar(base64Image); // Guarda la imagen en base64 localmente
+        setLocalAvatar(base64Image);
+        setSnackbar({
+          open: true,
+          message: 'Imagen cargada correctamente. No olvides guardar los cambios.',
+          severity: 'success'
+        });
       };
 
       reader.onerror = () => {
@@ -62,7 +90,11 @@ export default function ProfilePage(): React.JSX.Element {
       reader.readAsDataURL(file);
     } catch (err) {
       logger.error('Error al procesar la imagen:', err);
-      alert('Ocurrió un error al procesar la imagen');
+      setSnackbar({
+        open: true,
+        message: 'Ocurrió un error al procesar la imagen',
+        severity: 'error'
+      });
     } finally {
       // Limpiar el input
       if (fileInputRef.current) {
@@ -92,19 +124,36 @@ export default function ProfilePage(): React.JSX.Element {
         body: JSON.stringify(updatedUser),
       });
 
-       if (!res.ok) {
-        alert('Error al actualizar'); return;
+      if (!res.ok) {
+        setSnackbar({
+          open: true,
+          message: 'Error al actualizar el perfil',
+          severity: 'error'
+        });
+        return;
       }
 
       await checkSession?.();
       setLocalAvatar(null);
-      alert('Perfil actualizado correctamente');
+      setSnackbar({
+        open: true,
+        message: 'Perfil actualizado correctamente',
+        severity: 'success'
+      });
     } catch (err) {
       logger.error('Error al actualizar el perfil:', err);
-      alert('Ocurrió un error al actualizar el perfil');
+      setSnackbar({
+        open: true,
+        message: 'Ocurrió un error al actualizar el perfil',
+        severity: 'error'
+      });
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
   };
 
   // Determinar qué avatar mostrar (local o del usuario)
@@ -203,6 +252,17 @@ export default function ProfilePage(): React.JSX.Element {
           <ChangePasswordForm user={user} />
         </div>
       </Card>
+
+      <Snackbar
+              open={snackbar.open}
+              autoHideDuration={6000}
+              onClose={() => { setSnackbar(prev => ({ ...prev, open: false })); }}
+              anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+              <Alert severity={snackbar.severity} onClose={() => { setSnackbar(prev => ({ ...prev, open: false })); }}>
+                {snackbar.message}
+              </Alert>
+            </Snackbar>
     </div>
   );
 }

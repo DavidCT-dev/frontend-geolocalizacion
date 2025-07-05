@@ -12,8 +12,10 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { type Dayjs } from 'dayjs';
 import 'dayjs/locale/es';
-
+import { driverSchema } from '../../../schemas'
 dayjs.locale('es');
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 const modalStyle = {
   position: 'absolute' as const,
@@ -33,8 +35,6 @@ export default function Page(): React.JSX.Element {
   const [selectedDriver, setSelectedDriver] = useState('');
   const [selectedDriverForReport, setSelectedDriverForReport] = useState('');
   const [selectedMonth, setSelectedMonth] = useState<any>(dayjs().startOf('month'));
-  const [vehicleName, setVehicleName] = useState('');
-  const [licensePlate, setLicensePlate] = useState('');
   const [loading, setLoading] = useState(false);
   const [reportLoading, setReportLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({
@@ -43,7 +43,22 @@ export default function Page(): React.JSX.Element {
     severity: 'success' as 'success' | 'error',
   });
   const [drivers, setDrivers] = useState([]);
-  const [driverReportData, setDriverReportData] = useState<any>(null);
+
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+  } = useForm({
+    resolver: zodResolver(driverSchema),
+    defaultValues: {
+      vehiculo: '',
+      matricula: ''
+    }
+  });
+
+
 
   const getDrivers = async () => {
     try {
@@ -69,8 +84,7 @@ export default function Page(): React.JSX.Element {
   const handleClose = () => {
     setOpen(false);
     setSelectedDriver('');
-    setVehicleName('');
-    setLicensePlate('');
+    reset({ vehiculo: '', matricula: '' }); // Resetea el formulario
   };
 
   const handleOpenReportModal = () => { setOpenReportModal(true); };
@@ -84,8 +98,8 @@ export default function Page(): React.JSX.Element {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
 
-  const handleSubmit = async () => {
-    if (!selectedDriver || !vehicleName || !licensePlate) return;
+  const onSubmit = async (formData: any) => {
+    if (!selectedDriver) return;
 
     setLoading(true);
     try {
@@ -95,8 +109,8 @@ export default function Page(): React.JSX.Element {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          vehiculo: vehicleName,
-          matricula: licensePlate
+          vehiculo: formData.vehiculo,  // Usa los valores del formulario
+          matricula: formData.matricula
         }),
       });
 
@@ -123,18 +137,6 @@ export default function Page(): React.JSX.Element {
     }
   };
 
-  const fetchDriverReportData = async (driverId: string, month: Dayjs) => {
-    try {
-      setReportLoading(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL_BACK}reports/driver/${driverId}?month=${month.format('YYYY-MM')}`);
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      throw new Error('Error al obtener los datos del reporte');
-    } finally {
-      setReportLoading(false);
-    }
-  };
 
   const generatePDF = async () => {
     if (!selectedMonth) return;
@@ -288,7 +290,11 @@ export default function Page(): React.JSX.Element {
           aria-labelledby="modal-modal-title"
           aria-describedby="modal-modal-description"
         >
-          <Box sx={modalStyle}>
+          <Box
+            sx={modalStyle}
+            component="form"
+            onSubmit={handleSubmit(onSubmit)}
+          >
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
               <Typography variant="h5">Asignar Vehículo a Conductor</Typography>
               <IconButton onClick={handleClose}>
@@ -315,32 +321,54 @@ export default function Page(): React.JSX.Element {
                 ))}
               </TextField>
 
-              <TextField
-                select
-                fullWidth
-                label="Tipo de vehículo"
-                value={vehicleName}
-                onChange={(e) => { setVehicleName(e.target.value); }}
-                size="small"
-              >
-                <MenuItem value="MiniBus">MiniBus</MenuItem>
-                <MenuItem value="MicroBus">MicroBus</MenuItem>
-              </TextField>
+              <Controller
+                name="vehiculo"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    select
+                    fullWidth
+                    label="Tipo de vehículo"
+                    size="small"
+                    error={Boolean(errors.vehiculo)}
+                    helperText={errors.vehiculo?.message}
+                  >
+                    <MenuItem value="MiniBus">MiniBus</MenuItem>
+                    <MenuItem value="MicroBus">MicroBus</MenuItem>
+                  </TextField>
+                )}
+              />
 
-              <TextField
-                fullWidth
-                label="N° Matrícula"
-                value={licensePlate}
-                onChange={(e) => { setLicensePlate(e.target.value); }}
-                size="small"
+              <Controller
+                name="matricula"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="N° Matrícula"
+                    size="small"
+                    error={Boolean(errors.matricula)}
+                    helperText={errors.matricula?.message || "Formato: 1234-ABC o ABC-123"}
+                    onChange={(e) => {
+                      // Eliminar espacios y convertir a mayúsculas
+                      const value = e.target.value.replace(/\s/g, '').toUpperCase();
+                      field.onChange(value);
+                    }}
+                    inputProps={{
+                      maxLength: 8,
+                    }}
+                  />
+                )}
               />
 
               <Button
+                type="submit"
                 variant="contained"
-                onClick={handleSubmit}
-                disabled={!selectedDriver || !vehicleName || !licensePlate || loading}
+                disabled={!selectedDriver || isSubmitting}
               >
-                {loading ? 'Guardando...' : 'Guardar'}
+                {isSubmitting ? 'Guardando...' : 'Guardar'}
               </Button>
             </Stack>
           </Box>
