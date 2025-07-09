@@ -342,7 +342,8 @@ export default function JornadaPage(): JSX.Element {
       const placa = user?.matricula;
       if (!placa) throw new Error('No se encontró la matrícula del conductor');
 
-      const numeroParte = placa.split('-')[0];
+      console.log(placa)
+      const numeroParte = (placa as string).split('-')[0];
       const ultimoDigito = parseInt(numeroParte[numeroParte.length - 1]);
 
       if (isNaN(ultimoDigito)) throw new Error('La matrícula no termina en un número válido');
