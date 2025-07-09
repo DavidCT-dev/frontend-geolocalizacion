@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Button,
   Card,
@@ -36,6 +36,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import CloseIcon from '@mui/icons-material/Close';
 import dynamic from 'next/dynamic';
 import { useUser } from "@/hooks/use-user";
+import { useRouter } from 'next/navigation'; // Next.js 13+ (App Router)
 
 const Map = dynamic(() => import('./map'), {
   ssr: false,
@@ -95,7 +96,7 @@ interface Linea {
 type Modo = 'ruta' | 'parada' | 'alternativa';
 type Direccion = 'ida' | 'vuelta';
 
-export default function MapHeader({ lineas, getLineas, onLineaChange,setLinea }: any) {
+export default function MapHeader({ lineas, getLineas, onLineaChange,setLinea, setMapKey}: any) {
   const [open, setOpen] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
   const [openDeleteConfirm, setOpenDeleteConfirm] = useState(false);
@@ -114,6 +115,7 @@ export default function MapHeader({ lineas, getLineas, onLineaChange,setLinea }:
   const [currentDirection, setCurrentDirection] = useState<Direccion>('ida');
   const [hasReturnRoute, setHasReturnRoute] = useState(false);
   const [editingAlternative, setEditingAlternative] = useState(false);
+const router = useRouter();
 
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -172,6 +174,7 @@ export default function MapHeader({ lineas, getLineas, onLineaChange,setLinea }:
     setHasReturnRoute(false);
     setEditingAlternative(false);
   };
+
 
   const handleClose = () => {
     setOpen(false);
@@ -389,51 +392,51 @@ setLinea(updatedLinea)
     setOpenDeleteConfirm(true);
   };
 
-  const handleDeleteRoute = async () => {
-    if (!lineaSeleccionada) return;
+const handleDeleteRoute = async () => {
+  if (!lineaSeleccionada) return;
 
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL_BACK}rutas/${lineaSeleccionada._id}`, {
-        method: 'DELETE',
-      });
+  setIsLoading(true);
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL_BACK}rutas/${lineaSeleccionada._id}`, {
+      method: 'DELETE',
+    });
 
-      if (response.ok) {
-        setSnackbar({
-          open: true,
-          message: 'Línea eliminada exitosamente',
-          severity: 'success',
-        });
-
-        if (mapRef.current) {
-          mapRef.current.resetMap();
-        }
-
-        setRutaIda([]);
-        setRutaVuelta([]);
-        setRutaAlternativaIda([]);
-        setRutaAlternativaVuelta([]);
-        setParadas([]);
-        setCurrentStopName('');
-        setMode('ruta');
-        setRouteName('');
-
-        await getLineas?.();
-        setLineaSeleccionada(null);
-      } else {
-        throw new Error('Error al eliminar la línea');
-      }
-    } catch (error) {
+    if (response.ok) {
       setSnackbar({
         open: true,
-        message: error instanceof Error ? error.message : 'Error al eliminar la línea',
-        severity: 'error',
+        message: 'Línea eliminada exitosamente',
+        severity: 'success',
       });
-    } finally {
-      setIsLoading(false);
-      setOpenDeleteConfirm(false);
+
+      // Limpiar estados
+      setRutaIda([]);
+      setRutaVuelta([]);
+      setRutaAlternativaIda([]);
+      setRutaAlternativaVuelta([]);
+      setParadas([]);
+      setCurrentStopName('');
+      setMode('ruta');
+      setRouteName('');
+      setLineaSeleccionada(null);
+      setLinea(null);
+
+      // Forzar refresco del mapa
+setMapKey(new Date())
+      await getLineas?.();
+    } else {
+      throw new Error('Error al eliminar la línea');
     }
-  };
+  } catch (error) {
+    setSnackbar({
+      open: true,
+      message: error instanceof Error ? error.message : 'Error al eliminar la línea',
+      severity: 'error',
+    });
+  } finally {
+    setIsLoading(false);
+    setOpenDeleteConfirm(false);
+  }
+};
 
   const handleClear = () => {
     setRutaIda([]);
@@ -843,7 +846,7 @@ setLinea(updatedLinea)
       <Modal open={openEditModal} onClose={handleCloseEdit}>
         <Box sx={modalStyle}>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-            <Typography variant="h5">
+            <Typography  variant="h5">
               Editar ruta: {lineaSeleccionada?.nombre || ''}
             </Typography>
             <IconButton onClick={handleCloseEdit}>
@@ -868,6 +871,7 @@ setLinea(updatedLinea)
               }}>
                 <Stack spacing={2}>
                   <TextField
+                   style={{ marginTop: '10px' }}
                     fullWidth
                     label="Nombre de la ruta"
                     value={routeName}
@@ -1074,6 +1078,7 @@ setLinea(updatedLinea)
               }}>
                 <Stack spacing={2}>
                   <TextField
+  style={{ marginTop: '10px' }}
                     fullWidth
                     label="Nombre de la ruta"
                     value={routeName}
@@ -1238,14 +1243,14 @@ setLinea(updatedLinea)
             <Grid item xs={12} md={8}>
               <Box sx={{ height: '500px', width: '100%' }}>
                 <Map
-      ref={mapRef}
-      onMapClick={handleMapClick}
-      routePoints={currentDirection === 'ida' ? rutaIda : rutaVuelta}
-      alternativeRoute={currentDirection === 'ida' ? rutaAlternativaIda : rutaAlternativaVuelta}
-      stopPoints={paradas}
-      mode={mode}
-      currentDirection={currentDirection}
-    />
+  ref={mapRef}
+  onMapClick={handleMapClick}
+  routePoints={currentDirection === 'ida' ? rutaIda : rutaVuelta}
+  alternativeRoute={currentDirection === 'ida' ? rutaAlternativaIda : rutaAlternativaVuelta}
+  stopPoints={paradas}
+  mode={mode}
+  currentDirection={currentDirection}
+/>
 
               </Box>
             </Grid>

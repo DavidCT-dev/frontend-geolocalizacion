@@ -56,7 +56,7 @@ interface Asignacion {
     nombre: string;
   };
   rutaId?: {
-    _id?:string
+    _id?: string
     nombre: string;
   };
   fecha: string;
@@ -314,6 +314,27 @@ export default function Page(): JSX.Element {
     }
   };
 
+
+  const getBase64FromUrl = async (url: string): Promise<string> => {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        resolve(result);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error('Error al convertir imagen a Base64:', error);
+    throw error;
+  }
+};
+
   const generateReport = async (month: Dayjs, rutaId: string | null) => {
   try {
     setLoading(true);
@@ -335,33 +356,71 @@ export default function Page(): JSX.Element {
       return;
     }
 
-    // Crear PDF en modo vertical (portrait)
+    // Configuración inicial del documento
     const doc = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    const lineHeight = 7;
 
-    // Título principal
-    doc.setFontSize(16);
-    doc.setTextColor(0, 0, 0);
-    doc.setFont('helvetica', 'bold');
-    doc.text('REPORTE MENSUAL DE ASIGNACIONES', 105, 20, { align: 'center' });
+    // Registrar fuentes
+    doc.addFont('Times-Roman', 'Times', 'normal');
+    doc.addFont('Times-Bold', 'Times', 'bold');
 
-    // Subtítulo
-    doc.setFontSize(12);
-    doc.text(`Periodo: ${month.format('MMMM YYYY')}`, 105, 28, { align: 'center' });
+    // === ENCABEZADO ===
+    let currentY = 15; // Posición Y inicial
 
-    // Info de línea si aplica
-    if (rutaId && data.linea) {
-      doc.setFontSize(10);
-      doc.text(`Línea asignada: ${data.linea.nombre}`, 105, 35, { align: 'center' });
+    try {
+      const logoBase64 = await getBase64FromUrl('/logo.png');
+      doc.addImage(logoBase64, 'PNG', margin, currentY, 17, 17);
+    } catch (error) {
+      console.warn('No se pudo cargar el logo', error);
     }
 
-    // Procesar datos para la tabla
+    // Título principal
+    doc.setFont('Times', 'bold');
+    doc.setFontSize(14);
+    doc.text('COOPERATIVA DE TRANSPORTE 12 DE MAYO', pageWidth / 2, currentY + 10, { align: 'center' });
+
+    // Línea divisoria
+    currentY += 18;
+    doc.setLineWidth(0.5);
+    doc.line(margin, currentY, pageWidth - margin, currentY);
+
+    // Título del reporte
+    currentY += 10;
+    doc.setFontSize(16);
+    doc.text('REPORTE MENSUAL DE ASIGNACIONES', pageWidth / 2, currentY, { align: 'center' });
+
+    // Información del periodo
+    currentY += lineHeight;
+    doc.setFontSize(10);
+    doc.text(`Periodo: ${month.format('MMMM YYYY')}`, margin, currentY);
+
+    // Información de generación
+    const infoText = `Generado el: ${dayjs().format('DD/MM/YYYY HH:mm')}`;
+    doc.text(infoText, pageWidth - margin, currentY, { align: 'right' });
+
+    // Información de línea si aplica
+    if (rutaId && data.linea) {
+      currentY += lineHeight;
+      doc.text(`Línea asignada: ${data.linea.nombre}`, margin, currentY);
+    }
+
+    // Línea divisoria antes de la tabla
+    currentY += (rutaId ? lineHeight + 3 : lineHeight);
+    doc.setLineWidth(0.3);
+    doc.line(margin, currentY, pageWidth - margin, currentY);
+
+    // === PREPARACIÓN DE DATOS ===
     const daysInMonth = month.daysInMonth();
     const assignmentsByDay: Record<number, string[]> = {};
 
+    // Inicializar días del mes
     Array.from({ length: daysInMonth }, (_, i) => i + 1).forEach(day => {
       assignmentsByDay[day] = [];
     });
 
+    // Procesar asignaciones
     data.asignaciones.forEach((item: any) => {
       const day = dayjs(item.fecha).date();
       if (assignmentsByDay[day]) {
@@ -369,116 +428,92 @@ export default function Page(): JSX.Element {
       }
     });
 
-    // Preparar datos para tabla
-    const tableData: string[][] = [];
-    for (let day = 1; day <= daysInMonth; day++) {
+    // Preparar datos para la tabla
+    const tableData = Array.from({ length: daysInMonth }, (_, i) => {
+      const day = i + 1;
       const date = month.date(day);
       const dayName = date.format('ddd').toUpperCase();
       const dateStr = date.format('DD/MM');
+      const conductores = assignmentsByDay[day];
+      const cantidad = conductores.length;
+      const estado = cantidad > 0 ? 'CUBIERTO' : 'SIN ASIGNACIÓN';
 
-      tableData.push([
+      return [
         day.toString(),
         `${dayName} ${dateStr}`,
-        assignmentsByDay[day].join('\n') || '--'
-      ]);
-    }
+        conductores.join('\n') || '--',
+        cantidad.toString(),
+        estado
+      ];
+    });
 
-    // Generar tabla
+    // === GENERACIÓN DE LA TABLA ===
     autoTable(doc, {
-      startY: 40,
+      startY: currentY + 5,
       head: [
         [
-          {
-            content: 'DÍA',
-            styles: {
-              fillColor: [100, 100, 100],
-              textColor: 255,
-              fontStyle: 'bold' as const,
-              halign: 'center' as const
-            }
-          },
-          {
-            content: 'FECHA',
-            styles: {
-              fillColor: [100, 100, 100],
-              textColor: 255,
-              fontStyle: 'bold' as const,
-              halign: 'center' as const
-            }
-          },
-          {
-            content: 'CONDUCTORES',
-            styles: {
-              fillColor: [100, 100, 100],
-              textColor: 255,
-              fontStyle: 'bold' as const,
-              halign: 'center' as const
-            }
-          }
+          { content: 'DÍA', styles: { fillColor: [0, 0, 0], textColor: 255, fontStyle: 'bold', halign: 'center' } },
+          { content: 'FECHA', styles: { fillColor: [0, 0, 0], textColor: 255, fontStyle: 'bold', halign: 'center' } },
+          { content: 'CONDUCTORES', styles: { fillColor: [0, 0, 0], textColor: 255, fontStyle: 'bold', halign: 'center' } },
+          { content: 'CANT.', styles: { fillColor: [0, 0, 0], textColor: 255, fontStyle: 'bold', halign: 'center' } },
+          { content: 'ESTADO', styles: { fillColor: [0, 0, 0], textColor: 255, fontStyle: 'bold', halign: 'center' } }
         ]
       ],
       body: tableData.map(row => [
+        { content: row[0], styles: { halign: 'center' } },
+        { content: row[1], styles: { halign: 'left' } },
+        { content: row[2], styles: { halign: 'left' } },
+        { content: row[3], styles: { halign: 'center' } },
         {
-          content: row[0],
+          content: row[4],
           styles: {
-            fontStyle: 'normal' as const,
-            halign: 'center' as const
-          }
-        },
-        {
-          content: row[1],
-          styles: {
-            fontStyle: 'normal' as const,
-            halign: 'left' as const
-          }
-        },
-        {
-          content: row[2],
-          styles: {
-            fontStyle: 'normal' as const,
-            halign: 'left' as const
+            halign: 'center',
+            textColor: row[4] === 'SIN ASIGNACIÓN' ? [255, 0, 0] : [0, 0, 0],
+            fontStyle: row[4] === 'SIN ASIGNACIÓN' ? 'bold' : 'normal'
           }
         }
       ]),
       columnStyles: {
-        0: {
-          cellWidth: 15,
-          halign: 'center' as const,
-          fontStyle: 'bold' as const
-        },
-        1: {
-          cellWidth: 25,
-          halign: 'left' as const
-        },
-        2: {
-          cellWidth: 'auto',
-          cellPadding: 2,
-          halign: 'left' as const
-        }
+        0: { cellWidth: 15 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 85 },
+        3: { cellWidth: 20 },
+        4: { cellWidth: 30 }
       },
       styles: {
-        fontSize: 8,
-        cellPadding: 1,
-        lineColor: [200, 200, 200],
-        lineWidth: 0.1,
-        overflow: 'linebreak' as const,
-        fontStyle: 'normal' as const,
-        halign: 'left' as const
+        fontSize: 9,
+        cellPadding: 2,
+        lineWidth: 0.2,
+        overflow: 'linebreak',
+        font: 'Times',
+        lineColor: [200, 200, 200]
       },
-      margin: { left: 20, right: 20 },
-      tableWidth: 'wrap' as const,
-      pageBreak: 'avoid' as const
+      margin: { left: margin, right: margin },
+      didDrawPage: (data) => {
+        // Pie de página en cada página
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const footerY = pageHeight - 15;
+
+        doc.setLineWidth(0.3);
+        doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
+
+        doc.setFontSize(8);
+        doc.setTextColor(100);
+        doc.setFont('Times', 'normal');
+
+        // Texto izquierdo
+        doc.text('Sistema de Gestión de Transporte', margin, footerY);
+
+        // Número de página
+        const pageCount = doc.getNumberOfPages();
+        doc.text(`Página ${data.pageNumber} de ${pageCount}`, pageWidth / 2, footerY, { align: 'center' });
+      }
     });
 
-    // Pie de página
-    doc.setFontSize(8);
-    doc.setTextColor(100);
-    doc.text(`Generado el: ${dayjs().format('DD/MM/YYYY HH:mm')}`, 20, 285);
-    doc.text('Sistema de Gestión de Transporte', 190, 285, { align: 'right' });
-
-    // Mostrar PDF en nueva pestaña
+    // Abrir PDF en nueva ventana
     const pdfOutput = doc.output('bloburl');
     window.open(pdfOutput, '_blank');
+
   } catch (error) {
     console.error('Error al generar reporte:', error);
     setSnackbar({
@@ -490,6 +525,8 @@ export default function Page(): JSX.Element {
     setLoading(false);
   }
 };
+
+
 
 
 
@@ -858,62 +895,62 @@ export default function Page(): JSX.Element {
             </Box>
 
             {asignacionEdit ? <>
-                {/* Campo para seleccionar línea */}
-                <Box mb={2}>
-                  <Autocomplete
-                    options={rutas}
-                    getOptionLabel={(option: any) => option.nombre}
-                    value={rutas.find((l: any) => l._id === asignacionEdit.rutaId?._id) || null}
-                    onChange={(_, newValue) => {
-                      setAsignacionEdit((prev) => ({
-                        ...prev!,
-                        rutaId: newValue ? { _id: newValue._id, nombre: newValue.nombre } : undefined
-                      }));
-                    }}
-                    renderInput={(params) => (
-                      <TextField {...params} label="Seleccionar línea" fullWidth />
-                    )}
-                  />
-                </Box>
-
-                {/* Campo para seleccionar nuevo conductor */}
+              {/* Campo para seleccionar línea */}
+              <Box mb={2}>
                 <Autocomplete
-                  options={drivers}
-                  getOptionLabel={(option: Driver) => option.nombre}
-                  value={drivers.find((d: any) => d._id === asignacionEdit.conductorId?._id) || null}
-                  disabled
+                  options={rutas}
+                  getOptionLabel={(option: any) => option.nombre}
+                  value={rutas.find((l: any) => l._id === asignacionEdit.rutaId?._id) || null}
+                  onChange={(_, newValue) => {
+                    setAsignacionEdit((prev) => ({
+                      ...prev!,
+                      rutaId: newValue ? { _id: newValue._id, nombre: newValue.nombre } : undefined
+                    }));
+                  }}
                   renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Seleccionar conductor"
-                      variant="outlined"
-                      fullWidth
-                    />
+                    <TextField {...params} label="Seleccionar línea" fullWidth />
                   )}
                 />
+              </Box>
 
-                {/* Botones de acción */}
-                <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
-                  <Button variant="outlined" onClick={handleCloseModal} disabled={editLoading}>
-                    Cancelar
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={editLoading ? <CircularProgress size={20} /> : <SaveIcon />}
-                    onClick={handleUpdateAsignacion}
-                    disabled={editLoading || !asignacionEdit?.conductorId}
-                    sx={{
-                      minWidth: '150px',
-                      '& .MuiButton-startIcon': {
-                        marginRight: '8px'
-                      }
-                    }}
-                  >
-                    {editLoading ? 'Guardando...' : 'Guardar cambios'}
-                  </Button>
-                </Box>
-              </> : null}
+              {/* Campo para seleccionar nuevo conductor */}
+              <Autocomplete
+                options={drivers}
+                getOptionLabel={(option: Driver) => option.nombre}
+                value={drivers.find((d: any) => d._id === asignacionEdit.conductorId?._id) || null}
+                disabled
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Seleccionar conductor"
+                    variant="outlined"
+                    fullWidth
+                  />
+                )}
+              />
+
+              {/* Botones de acción */}
+              <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
+                <Button variant="outlined" onClick={handleCloseModal} disabled={editLoading}>
+                  Cancelar
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={editLoading ? <CircularProgress size={20} /> : <SaveIcon />}
+                  onClick={handleUpdateAsignacion}
+                  disabled={editLoading || !asignacionEdit?.conductorId}
+                  sx={{
+                    minWidth: '150px',
+                    '& .MuiButton-startIcon': {
+                      marginRight: '8px'
+                    }
+                  }}
+                >
+                  {editLoading ? 'Guardando...' : 'Guardar cambios'}
+                </Button>
+              </Box>
+            </> : null}
           </Box>
         </Modal>
 

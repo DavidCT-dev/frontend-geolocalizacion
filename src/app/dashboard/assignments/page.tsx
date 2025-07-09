@@ -93,29 +93,27 @@ export default function Page(): JSX.Element {
     if (!placa) return false;
 
     // Extraer el último dígito numérico antes del guión
-    const parteNumerica = placa.split('-')[0]; // "1234" o "123"
-    const ultimoDigito = parteNumerica.slice(-1); // último dígito numérico
+    const parteNumerica = placa.split('-')[0];
+    const ultimoDigito = parteNumerica.slice(-1);
 
-    // Verificar si es un número válido (0-9)
     if (!/^\d+$/.test(parteNumerica)) return false;
 
     const dia = fecha.date(diaIndex + 1);
-    const diaSemana = dia.day(); // 0=domingo, 1=lunes, ..., 6=sábado
+    const diaSemana = dia.day();
 
     // Restricciones (solo días laborables: lunes=1 a viernes=5)
     const restricciones: Record<number, string[]> = {
-      1: ['1', '2'],  // Lunes
-      2: ['3', '4'],  // Martes
-      3: ['5', '6'],  // Miércoles
-      4: ['7', '8'],  // Jueves
-      5: ['9', '0'],  // Viernes
+      1: ['0', '1'],  // Lunes
+      2: ['2', '3'],  // Martes
+      3: ['4', '5'],  // Miércoles
+      4: ['6', '7'],  // Jueves
+      5: ['8', '9'],  // Viernes
     };
 
     return restricciones[diaSemana]?.includes(ultimoDigito) ?? false;
   };
 
-
-  const toggleCheckbox = (lineIndex: number, dayIndex: number) => {
+   const toggleCheckbox = (lineIndex: number, dayIndex: number) => {
     if (dayIndex !== 0 || !conductor ) return;
     const dias = fechaInicio.daysInMonth(); // ✅ Se declara aquí
 
@@ -144,8 +142,6 @@ export default function Page(): JSX.Element {
     });
   };
 
-
-
   useEffect(() => {
     getDrivers();
     getLineas();
@@ -158,113 +154,108 @@ export default function Page(): JSX.Element {
   }, [fechaInicio, lineas]);
 
   const handleAsignar = async () => {
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    // Validaciones básicas
-    if (!fechaInicio || !conductor) {
-      setSnackbar({
-        open: true,
-        message: 'Seleccione un conductor y un mes válido',
-        severity: 'error'
-      });
-      return;
-    }
+      if (!fechaInicio || !conductor) {
+        setSnackbar({
+          open: true,
+          message: 'Seleccione un conductor y un mes válido',
+          severity: 'error'
+        });
+        return;
+      }
 
-    if (!conductor.matricula) {
-      setSnackbar({
-        open: true,
-        message: 'El conductor no tiene matrícula registrada',
-        severity: 'error'
-      });
-      return;
-    }
+      if (!conductor.matricula) {
+        setSnackbar({
+          open: true,
+          message: 'El conductor no tiene matrícula registrada',
+          severity: 'error'
+        });
+        return;
+      }
 
-    // Preparar datos para enviar
-    const asignacionesParaEnviar: any[] = [];
+      const asignacionesParaEnviar: any[] = [];
+      let totalAsignaciones = 0;
+      let asignacionesConRestriccion = 0;
 
-    lineas.forEach((ruta: any, rutaIndex: number) => {
-      asignaciones[rutaIndex].forEach((asignado: boolean, diaIndex: number) => {
-        if (asignado) {
-          const fechaAsignacion = fechaInicio.date(diaIndex + 1);
+      lineas.forEach((ruta: any, rutaIndex: number) => {
+        for (let diaIndex = 0; diaIndex < fechaInicio.daysInMonth(); diaIndex++) {
+          if (asignaciones[rutaIndex]?.[diaIndex]) {
+            // CORRECCIÓN: Usar directamente el día correcto (diaIndex + 1)
+            const fechaAsignacion = fechaInicio.date(diaIndex + 1).startOf('day');
 
-          // Verificar restricción por placa para esta fecha
-          const tieneRestriccion = tieneRestriccionPorPlaca(
-            conductor.matricula,
-            diaIndex,
-            fechaInicio
-          );
+            const tieneRestriccion = tieneRestriccionPorPlaca(
+              conductor.matricula,
+              diaIndex,
+              fechaInicio
+            );
 
-          if (!tieneRestriccion) {
-            asignacionesParaEnviar.push({
-              conductorId: conductor._id,
-              conductorNombre: conductor.nombre,
-              conductorMatricula: conductor.matricula,
-              rutaId: ruta._id,
-              rutaNombre: ruta.nombre,
-              fecha: fechaAsignacion.toDate(),
-              dia: fechaAsignacion.date(),
-              diaSemana: ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][fechaAsignacion.day()]
-            });
+            if (!tieneRestriccion) {
+              asignacionesParaEnviar.push({
+                conductorId: conductor._id,
+                conductorNombre: conductor.nombre,
+                conductorMatricula: conductor.matricula,
+                rutaId: ruta._id,
+                rutaNombre: ruta.nombre,
+                fecha: fechaAsignacion.toISOString(),
+                dia: diaIndex + 1, // Usamos directamente el día correcto
+                diaSemana: ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][fechaAsignacion.day()],
+                mes: fechaInicio.month() + 1,
+                año: fechaInicio.year()
+              });
+              totalAsignaciones++;
+            } else {
+              asignacionesConRestriccion++;
+            }
           }
         }
       });
-    });
 
-    // Validar que haya al menos una asignación
-    if (asignacionesParaEnviar.length === 0) {
+      // Resto del código permanece igual...
+      console.log('Asignaciones a enviar:', asignacionesParaEnviar);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL_BACK}rutas/asignacion`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          conductor: {
+            _id: conductor._id,
+            nombre: conductor.nombre,
+            matricula: conductor.matricula
+          },
+          asignaciones: asignacionesParaEnviar
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al asignar');
+      }
+
+      const result = await response.json();
+
       setSnackbar({
         open: true,
-        message: 'No hay días seleccionados válidos para asignar',
-        severity: 'warning'
+        message: `✅ ${result.creadas} asignaciones creadas\n⚠️ ${result.existentes} ya existían\n🚫 ${asignacionesConRestriccion} con restricciones`,
+        severity: 'success'
       });
-      return;
+
+      initializeAsignaciones(lineas, fechaInicio);
+
+    } catch (error) {
+      console.error('Error:', error);
+      setSnackbar({
+        open: true,
+        message: error instanceof Error ? error.message : 'Error al guardar las asignaciones',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
     }
-
-    // Enviar al backend
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL_BACK}rutas/asignacion`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}` // Si es necesario
-      },
-      body: JSON.stringify({
-        conductor: {
-          _id: conductor._id,
-          nombre: conductor.nombre,
-          matricula: conductor.matricula
-        },
-        asignaciones: asignacionesParaEnviar
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Error al asignar');
-    }
-
-    const result = await response.json();
-
-    setSnackbar({
-      open: true,
-      message: `✅ ${result.creadas} asignaciones creadas\n⚠️ ${result.existentes} ya existían`,
-      severity: 'success'
-    });
-
-    // Resetear selecciones
-    initializeAsignaciones(lineas, fechaInicio);
-
-  } catch (error) {
-    console.error('Error:', error);
-    setSnackbar({
-      open: true,
-      message: error instanceof Error ? error.message : 'Error al guardar las asignaciones',
-      severity: 'error'
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const generateDaysHeaders = (date: Dayjs) => Array.from({ length: date.daysInMonth() }, (_, i) => (
     <TableCell key={`day-${i}`} align="center">{i + 1}</TableCell>
@@ -275,30 +266,31 @@ export default function Page(): JSX.Element {
   ));
 
   const generateDaysCheckboxes = (lineIndex: number, date: Dayjs) => {
-  const daysInMonth = date.daysInMonth();
-  return Array.from({ length: daysInMonth }, (_, i) => {
-    const sinMatricula = !conductor?.matricula;
-    const restriccion = conductor?.matricula
-      ? tieneRestriccionPorPlaca(conductor.matricula, i, date)
-      : false;
+    const daysInMonth = date.daysInMonth();
+    return Array.from({ length: daysInMonth }, (_, i) => {
+      const diaNumero = i + 1; // Día real del mes (1-31)
+      const sinMatricula = !conductor?.matricula;
+      const restriccion = conductor?.matricula
+        ? tieneRestriccionPorPlaca(conductor.matricula, i, date)
+        : false;
 
-    return (
-      <TableCell key={`check-${lineIndex}-${i}`} align="center">
-        <Checkbox
-          checked={asignaciones[lineIndex]?.[i] || false}
-          onChange={() => { toggleCheckbox(lineIndex, i); }}
-          color="primary"
-          disabled={loading || !conductor || sinMatricula || restriccion}
-          title={
-            sinMatricula ? 'El conductor no tiene matrícula registrada' :
-            restriccion ? `Restricción: No circula los ${['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][date.date(i + 1).day()]}s (placa ${conductor?.matricula})` : ''
-          }
-        />
-      </TableCell>
-    );
-  });
-};
-
+      return (
+        <TableCell key={`check-${lineIndex}-${i}`} align="center">
+          <Checkbox
+            checked={asignaciones[lineIndex]?.[i] || false}
+            onChange={() => toggleCheckbox(lineIndex, i)}
+            color="primary"
+            disabled={loading || !conductor || sinMatricula || restriccion}
+            title={
+              sinMatricula ? 'El conductor no tiene matrícula registrada' :
+                restriccion ? `Restricción: No circula los ${['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][date.date(diaNumero).day()]}s (placa ${conductor?.matricula})` :
+                  `Día ${diaNumero} - ${date.date(diaNumero).format('dddd')}`
+            }
+          />
+        </TableCell>
+      );
+    });
+  };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -331,22 +323,14 @@ export default function Page(): JSX.Element {
                 value={drivers.find((d: any) => d._id === field.value?._id) || null}
                 onChange={(_, newValue) => {
                   field.onChange(newValue);
-
-                   if (!newValue?.matricula) {
-      setSnackbar({
-        open: true,
-        message: 'El conductor seleccionado no tiene matrícula registrada',
-        severity: 'error'
-      });
-      // Limpiar asignaciones y deshabilitar checkboxes
-      setAsignaciones(lineas.map(() => Array(fechaInicio.daysInMonth()).fill(false)));
-                  } else {
-                    const dias = fechaInicio.daysInMonth(); // ✅ esta línea es necesaria
-                    const nuevasAsignaciones = lineas.map(() =>
-                      Array.from({ length: dias }, () => false) // ✅ sin asignar por defecto
-                    );
-                    setAsignaciones(nuevasAsignaciones);
+                  if (!newValue?.matricula) {
+                    setSnackbar({
+                      open: true,
+                      message: 'El conductor seleccionado no tiene matrícula registrada',
+                      severity: 'error'
+                    });
                   }
+                  initializeAsignaciones(lineas, fechaInicio);
                 }}
                 isOptionEqualToValue={(option: any, value: any) => option._id === value?._id}
                 renderInput={(params) => (
@@ -372,18 +356,20 @@ export default function Page(): JSX.Element {
             )}
           />
 
-
-          {permissions?.includes('crear-asignacion') ? <Button
+          {permissions?.includes('crear-asignacion') && (
+            <Button
               variant="contained"
               color="primary"
               onClick={handleAsignar}
               disabled={!fechaInicio || !conductor || loading}
             >
               {loading ? 'Enviando...' : 'Asignar'}
-            </Button> : null}
+            </Button>
+          )}
         </Box>
 
-        {fechaInicio ? <TableContainer component={Paper}>
+        {fechaInicio && (
+          <TableContainer component={Paper}>
             <Table>
               <TableHead>
                 <TableRow>
@@ -404,16 +390,21 @@ export default function Page(): JSX.Element {
                 ))}
               </TableBody>
             </Table>
-          </TableContainer> : null}
+          </TableContainer>
+        )}
       </Box>
 
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
-        onClose={() => { setSnackbar(prev => ({ ...prev, open: false })); }}
+        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert severity={snackbar.severity} onClose={() => { setSnackbar(prev => ({ ...prev, open: false })); }}>
+        <Alert
+          severity={snackbar.severity}
+          onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+          sx={{ whiteSpace: 'pre-line' }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>

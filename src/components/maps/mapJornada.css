@@ -1,12 +1,61 @@
-/* Mejora la visualización de las etiquetas */
-.map-stop-label {
-  background-color: rgba(52, 168, 83, 0.7);
-  padding: 2px 6px;
-  border-radius: 4px;
-  white-space: nowrap;
+.map-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
 
-/* Ajusta el z-index para que las etiquetas sean visibles */
-.gm-style .gm-style-iw-c {
-  z-index: 4 !important;
+.loading-map {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #555;
+  font-size: 1.2rem;
+}
+
+.map-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+}
+
+.toggle-button {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.toggle-button:hover {
+  background-color: #f5f5f5;
+}
+
+.toggle-button.active {
+  background-color: #4285F4;
+  color: white;
+  border-color: #4285F4;
+}
+
+.info-window {
+  padding: 8px;
+  max-width: 200px;
+}
+
+.info-window strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.coordinates {
+  font-size: 0.8em;
+  color: #555;
+}
+
+.map-stop-label {
+  margin-top: 8px !important;
 }

@@ -249,7 +249,7 @@ export default function Page(): React.JSX.Element {
                 Actualizar conductor
               </Button>
 
-              <Button
+              {/* <Button
                 variant="contained"
                 startIcon={<PictureAsPdfIcon />}
                 onClick={handleOpenReportModal}
@@ -269,7 +269,7 @@ export default function Page(): React.JSX.Element {
                 }}
               >
                 Generar reporte
-              </Button>
+              </Button> */}
             </Box>
           </CardContent>
         </Card>

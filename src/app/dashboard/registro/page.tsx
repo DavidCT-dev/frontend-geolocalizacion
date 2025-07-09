@@ -54,7 +54,6 @@ export default function Page(): JSX.Element {
       setLoading(true);
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL_BACK}rutas/jornada/${user._id}/${fechaFormateada}`);
       const data = await res.json();
-
       setJornadas(data.jornadas || []);
       setTotalHoras(data.totalHorasTrabajadas || 0);
     } catch (err) {
@@ -65,12 +64,28 @@ export default function Page(): JSX.Element {
   };
 
   const formatFecha = (fechaISO: string) => {
-    const fecha = dayjs(fechaISO);
-    return {
-      dia: fecha.format('dddd'), // lunes, martes, ...
-      fecha: fecha.format('DD/MM/YYYY')
-    };
+  const fechaUTC = new Date(fechaISO);
+  const fechaLocal = new Date(fechaUTC.getTime() + fechaUTC.getTimezoneOffset() * 60000);
+
+  const opcionesFecha: Intl.DateTimeFormatOptions = {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
   };
+
+  const opcionesDia: Intl.DateTimeFormatOptions = {
+    weekday: 'long',
+  };
+
+  const fecha = fechaLocal.toLocaleDateString('es-BO', opcionesFecha);
+  const dia = capitalizeFirstLetter(fechaLocal.toLocaleDateString('es-BO', opcionesDia));
+
+  return { fecha, dia };
+};
+
+const capitalizeFirstLetter = (str: string) => {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+};
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -121,18 +136,18 @@ export default function Page(): JSX.Element {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {jornadas.length > 0 ? (
-                    jornadas.map((jornada, index) => {
-                      const { dia, fecha } = formatFecha(jornada.fecha);
-                      return (
-                        <TableRow key={index}>
-                          <TableCell>{fecha}</TableCell>
-                          <TableCell>{dia}</TableCell>
-                          <TableCell>{jornada.lineaId?.nombre || '-'}</TableCell>
-                          <TableCell>{jornada.horasTrabajadas.toFixed(2)} hrs</TableCell>
-                        </TableRow>
-                      );
-                    })
+                   {jornadas.length > 0 ? (
+    jornadas.map((jornada, index) => {
+      const { dia, fecha } = formatFecha(jornada.fecha);
+      return (
+        <TableRow key={index}>
+          <TableCell>{fecha}</TableCell>
+          <TableCell>{dia}</TableCell>
+          <TableCell>{jornada.lineaId?.nombre || '-'}</TableCell>
+          <TableCell>{jornada.horasTrabajadas.toFixed(2)} hrs</TableCell>
+        </TableRow>
+      );
+    })
                   ) : (
                     <TableRow>
                       <TableCell colSpan={4} align="center">

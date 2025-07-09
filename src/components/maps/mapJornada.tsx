@@ -1,151 +1,172 @@
 'use client';
-import React, { useState } from 'react';
-import {
-  GoogleMap,
-  Marker,
-  Polyline,
-  InfoWindow,
-  useJsApiLoader
-} from '@react-google-maps/api';
-
-import './mapJornada.css';
+import React, { useRef, useEffect, useState } from 'react';
+import { LoadScript, GoogleMap, Polyline, Marker } from '@react-google-maps/api';
 
 const containerStyle = {
   width: '100%',
-  height: '70vh',
+  height: '100%'
 };
 
-const defaultCenter = { lat: -19.5833, lng: -65.7500 };
-
-interface Punto {
+interface Point {
   latitud: number;
   longitud: number;
 }
 
-interface Parada {
-  nombre: string;
-  latitud: number;
-  longitud: number;
+interface MapProps {
+  routePoints: Point[];
+  alternativeRoutePoints: Point[];
+  showAlternative: boolean;
+  center: Point;
+  ubicacionActual: Point | null;
+  routeName: string;
+  routeType: string;
 }
 
-interface MapJornadaProps {
-  routePoints: Punto[];
-  stopPoints: Parada[];
-  ubicacionActual?: Punto | null;
-  center?: any | null;
-}
-
-function MapJornada({
+const MapJornada: React.FC<MapProps> = ({
   routePoints = [],
-  stopPoints = [],
-  ubicacionActual,
-  center
-}:any) {
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
-  });
+  alternativeRoutePoints = [],
+  showAlternative = false,
+  center,
+  ubicacionActual = null,
+  routeName = '',
+  routeType = ''
+}) => {
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const markerRef = useRef<google.maps.Marker | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [selectedStop, setSelectedStop] = useState<Parada | null>(null);
+  const onLoad = (map: google.maps.Map) => {
+    mapRef.current = map;
+    setIsLoaded(true);
+  };
 
-  // Estilo personalizado para los íconos de paradas
-  const createStopIcon = () => ({
-    path: google.maps.SymbolPath.CIRCLE,
-    fillColor: '#34A853',
-    fillOpacity: 1,
-    strokeColor: '#FFFFFF',
-    strokeWeight: 1,
-    scale: 7,
-  });
+  const onUnmount = () => {
+    mapRef.current = null;
+    markerRef.current = null;
+    setIsLoaded(false);
+  };
 
-  // Ícono personalizado para la ubicación actual
-  const createCurrentLocationIcon = () => ({
-    path: google.maps.SymbolPath.CIRCLE,
+  // Determinar qué ruta mostrar
+  const activeRoute = showAlternative ? alternativeRoutePoints : routePoints;
+  const activeRoutePath = activeRoute.map(point => ({
+    lat: point.latitud,
+    lng: point.longitud
+  }));
+
+  // Configuración del ícono para la ubicación actual
+  const locationIcon = {
+    path: 0, // Equivalente a google.maps.SymbolPath.CIRCLE
+    scale: 8,
     fillColor: '#4285F4',
     fillOpacity: 1,
-    strokeColor: '#FFFFFF',
     strokeWeight: 2,
-    scale: 8,
-  });
+    strokeColor: '#FFFFFF'
+  };
 
-  if (!isLoaded) return <div>Cargando mapa...</div>;
+  useEffect(() => {
+    if (mapRef.current && activeRoute.length > 0) {
+      const bounds = new google.maps.LatLngBounds();
 
-  const mapCenter = center ?
-    { lat: center.latitud, lng: center.longitud } :
-    (ubicacionActual ?
-      { lat: ubicacionActual.latitud, lng: ubicacionActual.longitud } :
-      defaultCenter);
+      // Añadir puntos de la ruta a los límites
+      activeRoute.forEach(point => {
+        bounds.extend(new google.maps.LatLng(point.latitud, point.longitud));
+      });
+
+      // Añadir ubicación actual a los límites si existe
+      if (ubicacionActual) {
+        bounds.extend(new google.maps.LatLng(ubicacionActual.latitud, ubicacionActual.longitud));
+      }
+
+      // Ajustar el mapa a los límites calculados
+      mapRef.current.fitBounds(bounds);
+
+      // Limitar el zoom máximo
+      const listener = google.maps.event.addListener(mapRef.current, 'bounds_changed', () => {
+        if (mapRef.current) {
+          const currentZoom = mapRef.current.getZoom();
+          if (currentZoom && currentZoom > 15) {
+            mapRef.current.setZoom(15);
+          }
+        }
+      });
+
+      return () => {
+        google.maps.event.removeListener(listener);
+      };
+    }
+  }, [activeRoute, ubicacionActual]);
 
   return (
-    <GoogleMap
-      mapContainerStyle={containerStyle}
-      center={mapCenter}
-      zoom={14}
-      onLoad={(map) => { setMap(map); }}
-      options={{
-        streetViewControl: false,
-        mapTypeControl: false,
-        fullscreenControl: false,
-      }}
+    <LoadScript
+      googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}
+      loadingElement={<div style={{ height: '100%' }} />}
+      onLoad={() => setIsLoaded(true)}
     >
-      {/* Línea de ruta */}
-      {routePoints.length > 1 && (
-        <Polyline
-          path={routePoints.map((p:any) => ({ lat: p.latitud, lng: p.longitud }))}
-          options={{
-            strokeColor: '#FF0000',
-            strokeOpacity: 0.8,
-            strokeWeight: 4,
-          }}
-        />
-      )}
-
-      {/* Marcadores de paradas */}
-      {stopPoints.map((stop:any, index:any) => (
-        <React.Fragment key={`stop-${index}`}>
-          <Marker
-            position={{ lat: stop.latitud, lng: stop.longitud }}
-            icon={createStopIcon()}
-            label={{
-              text: stop.nombre,
-              color: '#FFFFFF',
-              fontSize: '11px',
-              fontWeight: 'bold',
-              className: 'map-stop-label',
+      <GoogleMap
+        mapContainerStyle={containerStyle}
+        center={ubicacionActual ?
+          { lat: ubicacionActual.latitud, lng: ubicacionActual.longitud } :
+          { lat: center.latitud, lng: center.longitud }}
+        zoom={13}
+        onLoad={onLoad}
+        onUnmount={onUnmount}
+        options={{
+          streetViewControl: false,
+          mapTypeControl: false,
+          fullscreenControl: false,
+          minZoom: 10,
+          maxZoom: 18
+        }}
+      >
+        {/* Ruta principal o alternativa */}
+        {activeRoutePath.length > 1 && (
+          <Polyline
+            path={activeRoutePath}
+            options={{
+              strokeColor: showAlternative ? '#0000FF' : '#FF0000',
+              strokeOpacity: 1.0,
+              strokeWeight: 4,
+              zIndex: 1
             }}
-            onClick={() => { setSelectedStop(stop); }}
           />
+        )}
 
-          {/* InfoWindow */}
-          {selectedStop?.nombre === stop.nombre && (
-            <InfoWindow
-              position={{ lat: stop.latitud, lng: stop.longitud }}
-              onCloseClick={() => { setSelectedStop(null); }}
-            >
-              <div style={{ padding: '8px', maxWidth: '200px' }}>
-                <strong>🚏 {stop.nombre}</strong>
-                <div style={{ fontSize: '0.8em', color: '#555' }}>
-                  Lat: {stop.latitud.toFixed(6)}<br />
-                  Lng: {stop.longitud.toFixed(6)}
-                </div>
-              </div>
-            </InfoWindow>
-          )}
-        </React.Fragment>
-      ))}
+        {/* Marcador de ubicación actual */}
+        {ubicacionActual && (
+          <Marker
+            position={{
+              lat: ubicacionActual.latitud,
+              lng: ubicacionActual.longitud
+            }}
+            icon={locationIcon}
+            zIndex={10}
+          />
+        )}
 
-      {/* Marcador de ubicación actual */}
-      {ubicacionActual ? <Marker
-          position={{
-            lat: ubicacionActual.latitud,
-            lng: ubicacionActual.longitud
-          }}
-          icon={createCurrentLocationIcon()}
-          title="Ubicación actual"
-        /> : null}
-    </GoogleMap>
+        {/* Marcadores de inicio y fin de ruta */}
+        {activeRoutePath.length > 0 && isLoaded && (
+          <>
+            {/* <Marker
+              position={activeRoutePath[0]}
+              icon={{
+                url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+                scaledSize: new google.maps.Size(32, 32)
+              }}
+              label="Inicio"
+            /> */}
+            {/* <Marker
+              position={activeRoutePath[activeRoutePath.length - 1]}
+              icon={{
+                url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+                scaledSize: new google.maps.Size(32, 32)
+              }}
+              label="Fin"
+            /> */}
+          </>
+        )}
+      </GoogleMap>
+    </LoadScript>
   );
-}
+};
 
 export default MapJornada;
