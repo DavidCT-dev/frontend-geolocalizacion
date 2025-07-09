@@ -155,6 +155,7 @@ export default function JornadaPage(): JSX.Element {
 
         // Emitir ubicación inicial
         socket.emit('ubicacion', {
+          nombre:user?.nombre,
           conductorId: user?._id,
           lineaId: linea._id,
           salaId: `linea_${linea._id}`,
@@ -172,6 +173,8 @@ export default function JornadaPage(): JSX.Element {
         watchIdRef.current = navigator.geolocation.watchPosition(
           (pos) => {
             const ubicacionData = {
+                        nombre:user?.nombre,
+
               conductorId: user?._id,
               lineaId: linea._id,
               salaId: `linea_${linea._id}`,
@@ -240,6 +243,7 @@ export default function JornadaPage(): JSX.Element {
 
       // Emitir pausa al servidor
       socket.emit('ubicacion', {
+        nombre:user?.nombre,
         conductorId: user?._id,
         lineaId: linea?._id,
         salaId: `linea_${linea?._id}`,
@@ -298,6 +302,7 @@ export default function JornadaPage(): JSX.Element {
 
       // Emitir finalización al servidor
       socket.emit('ubicacion', {
+        nombre:user?.nombre,
         conductorId: user?._id,
         lineaId: linea?._id,
         salaId: `linea_${linea?._id}`,
@@ -342,7 +347,6 @@ export default function JornadaPage(): JSX.Element {
       const placa = user?.matricula;
       if (!placa) throw new Error('No se encontró la matrícula del conductor');
 
-      console.log(placa)
       const numeroParte = (placa as string).split('-')[0];
       const ultimoDigito = parseInt(numeroParte[numeroParte.length - 1]);
 
